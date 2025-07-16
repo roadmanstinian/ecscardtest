@@ -1,0 +1,6168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+    }
+    .question-container {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      background: #fff;
+    }
+    .question-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .options ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .options li {
+      margin-bottom: 5px;
+    }
+    .correct-answer {
+      margin-top: 10px;
+      color: green;
+      font-weight: bold;
+    }
+    .incorrect-answer {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+    .button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    /*
+    /*@keyframes tickPulse {
+      0% { background-color: rgba(0, 0, 0, 0.85); }
+      50% { background-color: rgba(255, 255, 255, 0.1); }
+      100% { background-color: rgba(0, 0, 0, 0.85); }
+    }
+
+    #stopwatch.tick {
+      animation: tickPulse 10s ease-in-out;
+    }
+    */
+    
+  </style>
+</head>
+<body>
+  <div id="stopwatch" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-family: monospace;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    transition: all 0.2s ease-in-out;
+  ">⏱️ 00:00.00</div>
+
+
+  <h1>HS&E Quiz Question Parser</h1>
+  <div id="start-menu" style="text-align:center; margin-bottom: 30px;">
+    <h2>Select Quiz Mode</h2>
+    <button onclick="startQuiz('random')" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Start 6 Random Questions</button><br>
+    <button onclick="startQuiz('all')" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Start All Questions</button>
+  </div>
+  <div id="quiz"></div>
+
+<script>
+let stopwatchInterval = null;
+let elapsed = 0; // in milliseconds
+
+function updateStopwatchDisplay() {
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const hundredths = Math.floor((elapsed % 1000) / 10);
+    const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const secs = String(totalSeconds % 60).padStart(2, '0');
+    const centis = String(hundredths % 100).padStart(2, '0');
+
+    document.getElementById('stopwatch').textContent = `⏱️ ${mins}:${secs}.${centis}`;
+    document.getElementById('stopwatch').classList.add('tick');
+    setTimeout(() => {
+      document.getElementById('stopwatch').classList.remove('tick');
+    }, 200);
+}
+
+
+// Hardcoded quiz content
+const xTxtContent = `HS&E test download for operatives and specialists
+General responsibilities
+Question
+Who is responsible for reporting any unsafe
+conditions on site?
+A) The site manager only
+B) The client
+C) Health and Safety Executive (HSE)
+inspectors
+D) Everyone on site
+The correct answer is D.
+1
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+During site induction you do not understand
+something the presenter says. What should you
+do?
+A) Attend another site induction
+B) Ask the presenter to explain the point again
+C) Guess what the presenter was trying to tell
+you
+D) Wait until the end then ask someone else to
+explain
+The correct answer is B.
+2
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Now that work on site is moving forward, the
+safety rules given in your site induction seem
+out of date. What should you do?
+A) Do nothing, you are not responsible for
+safety on site
+B) Speak to your supervisor about your
+concerns
+C) Speak to your workmates to see if they have
+any new rules
+D) Make up your own safety rules to suit the
+changing conditions
+The correct answer is B.
+3
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+What is the most important reason for keeping
+your work area clean and tidy?
+A) To prevent slips, trips and falls
+B) So that you don’t have a big clean-up at the
+end of the week
+C) So that waste skips can be emptied more
+often
+D) To recycle waste and help the environment
+The correct answer is A.
+4
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+The work of another contractor is affecting your
+safety. You should stop work and:
+A) go home
+B) speak to your supervisor
+C) speak to the contractor's supervisor
+D) speak to the contractor who is doing the job
+The correct answer is B.
+5
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+You are using some equipment. It has just been
+given a prohibition notice. What does this
+mean?
+A) You must not use it unless your supervisor is
+present
+B) You must not use it until it is made safe
+C) You can use it as long as you take more
+care
+D) Only supervisors can use it
+The correct answer is B.
+6
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+The whole site has been issued with a
+prohibition notice. What does this mean to you?
+A) You can carry on working because it was
+nothing to do with you
+B) You are not allowed to use any power tools
+C) You can finish what you are doing and then
+go home
+D) You must stop work because the site is
+unsafe
+The correct answer is D.
+7
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+After watching you work, a Health and Safety
+Executive (HSE) inspector issues an
+improvement notice. What does this mean?
+A) You are not working fast enough
+B) You need to improve the standard of your
+work
+C) You are not working in a safe way
+D) All of these answers
+The correct answer is C.
+8
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+The Law (Health and Safety at Work Act) places
+legal duties on:
+A) employers only
+B) operatives only
+C) all people at work
+D) self-employed people only
+The correct answer is C.
+9
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+As a worker you do NOT have a legal duty to:
+A) use all equipment safely and as instructed
+B) write your own risk assessments
+C) speak to your supervisor if you are worried
+about safety on site
+D) report any equipment that is damaged or
+defective
+The correct answer is B.
+10
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Why is the Health and Safety at Work Act
+important to you? Give TWO answers.
+A) It tells you which parts of the site are
+dangerous
+B) It must be learned before starting work
+C) It puts legal duties on your employer to
+provide a safe place to work
+D) It tells you how to do your job
+E) It puts legal duties on you as a worker
+The correct answers are C and E.
+11
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Which of these is NOT your legal duty as a
+worker?
+A) To look after your own health and safety
+B) To look after the health and safety of anyone
+else who might be affected by your work
+C) To write your own risk assessments
+D) Not to interfere with anything provided for
+health and safety
+The correct answer is C.
+12
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Who is responsible for managing health and
+safety on construction sites?
+A) The company safety officer
+B) The Health and Safety Executive (HSE)
+C) The client
+D) The site manager
+The correct answer is D.
+13
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+A risk assessment identifies:
+A) how to report accidents
+B) the site working hours
+C) the hazards and safe way of doing the job
+D) where the first-aid box is kept
+The correct answer is C.
+14
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+You will often hear the word hazard mentioned.
+What does it mean?
+A) Anything at work that could harm you
+B) The site accident rate
+C) A type of barrier or machine guard
+D) All of these answers
+The correct answer is A.
+15
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+You are about to start a job. How will you know if
+it needs a permit to work?
+A) Other workers will tell you
+B) The Health and Safety Executive (HSE) will
+tell you
+C) You will not be allowed to start until the
+permit to work has been issued
+D) You don’t need to know, as permits to work
+only affect managers
+The correct answer is C.
+16
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Which THREE of the following should be
+included in a method statement?
+A) The materials, tools and equipment needed
+B) The people involved and the level of
+competency and training required
+C) The directions to the site
+D) The order and correct way the work should
+be done
+E) The risks you can take
+The correct answers are A, B and D.
+17
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+You find that you cannot do a job as the method
+statement says you should. What do you do?
+A) Make up your own way of doing the job
+B) Do not start work until you have talked with
+your supervisor
+C) Ask your workmates how they think you
+should do the job
+D) Contact the Health and Safety Executive
+(HSE)
+The correct answer is B.
+18
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+A permit to work allows:
+A) the emergency services to come on to the
+site after an accident
+B) certain jobs to be carried out safely under
+controlled conditions
+C) Health and Safety Executive (HSE)
+inspectors to visit the site
+D) untrained people to work without supervision
+The correct answer is B.
+19
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+How would you expect to find out about site
+health and safety rules when you first arrive on
+site?
+A) During site induction
+B) In a letter sent to your home
+C) By reading your employer’s health and
+safety policy
+D) By asking others on the site
+The correct answer is A.
+20
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+It is your employer's legal responsibility to
+discuss matters of health and safety with you
+because:
+A) it will mean that you will never have to attend
+any other health and safety training
+B) having done so, your employer will not have
+any legal responsibility for your health and
+safety
+C) they must inform you of things that will
+protect your health and safety
+D) you do not have any responsibilities for
+health and safety
+The correct answer is C.
+21
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+What is a tool box talk?
+A) A short training session on a particular safety
+topic
+B) A talk that tells you where to buy tools
+C) Your first training session when you arrive on
+site
+D) A sales talk given by a tool supplier
+The correct answer is A.
+22
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+Who should attend a site induction?
+A) Cleaners
+B) Architects
+C) Construction-related workers
+D) Everyone going on to the site
+The correct answer is D.
+23
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+During a site induction, which of the following
+TWO topics should be covered?
+A) The site rules
+B) Where the cheapest car park is
+C) Holiday dates
+D) The site emergency procedures
+E) Information on local amenities
+The correct answers are A and D.
+24
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+A near miss is an incident where:
+A) you were just too late to see what happened
+B) someone could have been injured
+C) someone was injured and nearly had to go
+to hospital
+D) someone was injured and nearly had to take
+time off work
+The correct answer is B.
+25
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+You can help prevent accidents by:
+A) reporting unsafe working conditions
+B) becoming a first aider
+C) knowing where the first-aid kit is kept
+D) knowing how to get help quickly
+The correct answer is A.
+26
+HS&E test download for operatives and specialists
+General responsibilities
+Question
+What is the MAIN reason for attending a site
+induction?
+A) You will get to know other new starters
+B) Risk assessments will be handed out
+C) Site health and safety rules and site hazards
+will be explained
+D) Permits to work will be handed out
+The correct answer is C.
+27
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Which TWO of the following will help you find
+out about the site emergency procedures and
+emergency telephone numbers?
+A) Guidance from the Health and Safety
+Executive (HSE)
+B) Reading the site notice boards
+C) Guidance from your local Job Centre Plus
+D) Attending the site induction
+E) Looking in the telephone directory
+The correct answers are B and D.
+28
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+In an emergency you should:
+A) leave site
+B) phone home
+C) follow the site emergency procedure
+D) phone the Health and Safety Executive
+(HSE)
+The correct answer is C.
+29
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+In an emergency an 'assembly point' is the:
+A) site manager's office
+B) place of the incident or accident
+C) welfare facilities
+D) specified place to gather after an evacuation
+The correct answer is D.
+30
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+A scaffold has collapsed and you saw it happen.
+When you are asked about the accident, you
+should say:
+A) nothing, you are not a scaffold expert
+B) as little as possible because you don't want
+to get people into trouble
+C) exactly what you saw
+D) who you think is to blame and how they
+should be punished
+The correct answer is C.
+31
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+What is the MAIN objective of carrying out an
+accident investigation?
+A) To find out who is at fault
+B) To find out the causes in order to prevent it
+happening again
+C) To find out the cost of any damage that
+occurred
+D) To record what injuries were sustained
+The correct answer is B.
+32
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You have witnessed a serious accident on your
+site and are to be interviewed by a Health and
+Safety Executive (HSE) inspector. Should you:
+A) ask your supervisor what you should say to
+the inspector
+B) not tell the inspector anything
+C) co-operate and tell the inspector exactly
+what you saw
+D) tell the inspector what your workmates have
+told you
+The correct answer is C.
+33
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+When must you record an accident in the
+accident book?
+A) If you are injured in any way
+B) Only if you have to be off work
+C) Only if you have suffered a broken bone
+D) Only if you have to go to hospital
+The correct answer is A.
+34
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+If someone is injured at work, who should record
+it in the accident book?
+A) The site manager and no-one else
+B) The injured person or someone acting for
+them
+C) The first aider and no-one else
+D) Someone from the Health and Safety
+Executive (HSE)
+The correct answer is B.
+35
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Which of these does NOT have to be recorded
+in the accident book?
+A) Your national insurance number
+B) The date and time of your accident
+C) Details of your injury
+D) Your home address
+The correct answer is A.
+36
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Which type of accidents should be recorded in
+the accident book?
+A) Only major injuries, such as a broken arm or
+death of a person
+B) Only injuries requiring hospital treatment
+C) All accidents causing any injury
+D) Only accidents where the injured person has
+to stop work
+The correct answer is C.
+37
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+When must an accident be recorded in the site's
+accident book?
+A) Only when an accident causes injury to a
+worker while at work
+B) Only when a person is injured and will be off
+work for more than three days
+C) Only when an accident causes damage to
+plant or equipment
+D) Only when a person breaks a major bone or
+is concussed
+The correct answer is A.
+38
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+An entry must be made in the accident book
+when:
+A) an accident causes personal injury to any
+worker
+B) the person has been off sick for three days
+C) the severity of the accident may result in a
+compensation claim
+D) management thinks it appropriate
+The correct answer is A.
+39
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Which TWO of the following items are NOT
+recorded in an accident book?
+A) Your national insurance number
+B) Your telephone number
+C) The date and time of the accident
+D) The injuries sustained
+E) Your home address
+The correct answers are A and B.
+40
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You suffer an injury at work and the details are
+recorded into the accident book. What MUST
+happen to this accident record?
+A) It must be sent to the employer's insurance
+company at the end of the job
+B) It must be kept in a place where anyone can
+read it
+C) It must be treated as confidential under the
+Data Protection Act and kept for at least
+three years
+D) It must be destroyed at the end of the job
+The correct answer is C.
+41
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Accidents causing any injury should always be
+recorded in the:
+A) main contractor's diary
+B) accident report book
+C) site engineer's day book
+D) subcontractor's diary
+The correct answer is B.
+42
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Why is it important to report all accidents?
+A) It might stop them happening again
+B) Some types of accident have to be reported
+to the Health and Safety Executive (HSE)
+C) Details have to be entered in the accident
+book
+D) All of these answers
+The correct answer is D.
+43
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Why is it important to report near miss incidents
+on site?
+A) Because it is the law for all 'near miss'
+incidents
+B) To find someone to blame
+C) It is a requirement of the CDM Regulations
+D) To learn from them and stop them happening
+again
+The correct answer is D.
+44
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+If you have a minor accident, who should report
+it?
+A) Anyone who saw the accident happen
+B) A subcontractor
+C) You
+D) The Health and Safety Executive (HSE)
+The correct answer is C.
+45
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+If your doctor says that you have Weil's disease
+(leptospirosis), contracted when on site, why do
+you need to tell your employer?
+A) Your employer has to warn your colleagues
+not to go anywhere near you
+B) Your employer will have to report it to the
+Health and Safety Executive (HSE)
+C) Your work colleagues might catch it from you
+D) The site on which you contracted it will have
+to be closed down
+The correct answer is B.
+46
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+While working on site you get a small cut on one
+of your fingers. What should you do?
+A) Report it at the end of the day or the end of
+the shift
+B) Wash it, and if it is not a problem carrying on
+working
+C) Clean it up and tell your supervisor about it
+later
+D) Report it and get first aid if necessary
+The correct answer is D.
+47
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You receive an injury from an accident at work.
+When should you report it?
+A) At the end of the day, before you go home
+B) Only if you had to take time off work
+C) Immediately, or as soon as possible
+afterwards
+D) The next day before you start work
+The correct answer is C.
+48
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You have suffered an injury caused by an
+accident at work and as a result you are absent
+for more than seven days. Which TWO of the
+following actions MUST be taken?
+A) The accident must be recorded in the site
+accident book
+B) The emergency services are called to
+assess the circumstances of the accident
+C) The local hospital and the benefits office
+must be informed
+D) Your employer should inform the Health and
+Safety Executive (HSE)
+E) You must pay for any first-aid equipment
+used to treat your injury
+The correct answers are A and D.
+49
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Why should you report an accident?
+A) It helps the site find out who caused it
+B) It is a legal requirement
+C) So that the site manager can see who is to
+blame
+D) So that your company will be held
+responsible
+The correct answer is B.
+50
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Who must you report a serious accident to?
+A) Site security
+B) The police service
+C) Your employer
+D) The ambulance service
+The correct answer is C.
+51
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You are involved in an incident on site that was
+dangerous but no-one was injured. Who must
+you report this 'dangerous occurrence' to?
+A) Your site supervisor or the site manager
+B) The client for the project
+C) The rest of the workforce
+D) The first aider
+The correct answer is A.
+52
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+You have witnessed a serious accident on your
+site. Should you:
+A) say nothing to anyone in case you get
+someone into trouble
+B) ask your workmates what they think you
+should do
+C) telephone the local hospital
+D) tell your supervisor that you saw what
+happened
+The correct answer is D.
+53
+HS&E test download for operatives and specialists
+Accident reporting and recording
+Question
+Your doctor tells you that you have hand-arm
+vibration syndrome possibly caused through
+work. What should you do?
+A) Tell no-one as it's embarrassing
+B) Inform your site supervisor or employer
+C) Just inform your workmates
+D) Tell no-one as this is not reportable
+The correct answer is B.
+54
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+You will find out about emergency assembly
+points from:
+A) a risk assessment
+B) a method statement
+C) the site induction
+D) the permit to work
+The correct answer is C.
+55
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+How should you be informed about what to do in
+an emergency? Give TWO answers.
+A) From the site induction
+B) Look in the health and safety file
+C) Ask the Health and Safety Executive (HSE)
+D) Ask the local hospital
+E) From the site notice boards
+The correct answers are A and E.
+56
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+A first-aid box should NOT contain:
+A) bandages
+B) plasters
+C) safety pins
+D) over the counter medicines such as aspirin
+or painkillers
+The correct answer is D.
+57
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+The first-aid box on site is always empty. What
+should you do?
+A) Bring your own first-aid supplies into work
+B) Find out who is taking all the first-aid
+supplies
+C) Find out who looks after the first-aid box and
+let them know
+D) Ignore the problem, it is always the same
+The correct answer is C.
+58
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Does your employer have to provide a first-aid
+box?
+A) Yes, every site must have one
+B) Only if more than 50 people work on site
+C) Only if more than 25 people work on site
+D) No, there is no legal duty to provide one
+The correct answer is A.
+59
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+When would you expect eyewash bottles to be
+provided?
+A) Only on demolition sites where asbestos has
+to be removed
+B) Only on sites where refurbishment is being
+carried out
+C) On all sites where people could get
+something in their eyes
+D) On all sites where showers are needed
+The correct answer is C.
+60
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If you want to be a first aider, you should:
+A) watch a first aider treating people then try it
+yourself
+B) ask if you can do a first-aider's course
+C) buy a book on first aid and start treating
+people
+D) speak to your doctor about it
+The correct answer is B.
+61
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+What is the first thing you should do if you find
+an injured person?
+A) Tell your supervisor
+B) Check that you are not in any danger before
+you check the injured person
+C) Move the injured person to a safe place
+D) Ask the injured person what happened
+The correct answer is B.
+62
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If someone falls and is knocked unconscious,
+you should first:
+A) turn them over so they are lying on their
+back
+B) send for medical help
+C) slap their face to wake them up
+D) give mouth-to-mouth resuscitation
+The correct answer is B.
+63
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Someone has fallen from height and has no
+feeling in their legs. You should:
+A) roll them onto their back and keep their legs
+straight
+B) roll them onto their side and bend their legs
+C) ensure they stay still and don't move them
+until medical help arrives
+D) raise their legs to see if any feeling comes
+back
+The correct answer is C.
+64
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Someone working in a deep manhole has
+collapsed. What is the first thing you should do?
+A) Get someone to lower you into the manhole
+on a rope
+B) Climb into the manhole and give
+mouth-to-mouth resuscitation
+C) Go and tell your supervisor
+D) Shout and raise the alarm as a trained
+rescue team will be needed
+The correct answer is D.
+65
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If there is an emergency while you are on site
+you should first:
+A) leave the site and go home
+B) phone home
+C) follow the site emergency procedure
+D) phone the Health and Safety Executive
+(HSE)
+The correct answer is C.
+66
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If someone is in contact with a live cable the
+best thing you can do is:
+A) phone the electricity company
+B) dial 999 and ask for an ambulance
+C) switch off the power and call for help
+D) pull them away from the cable
+The correct answer is C.
+67
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+What does this sign mean?
+A) Safety glasses cleaning station
+B) Emergency eyewash station
+C) Warning, risk of splashing
+D) Wear eye protection
+The correct answer is B.
+68
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+What does this sign mean?
+A) First aid
+B) Safe to cross
+C) No waiting
+D) Medicine box
+The correct answer is A.
+69
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If you cut your finger and it won’t stop bleeding,
+you should:
+A) wrap something around it and carry on
+working
+B) tell your workmates
+C) wash it clean then carry on working
+D) find a first aider or get other medical help
+The correct answer is D.
+70
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+What is the one thing a first aider CANNOT do
+for you?
+A) Give mouth-to-mouth resuscitation
+B) Stop any bleeding
+C) Give you medicines without authorisation
+D) Treat you if you are unconscious
+The correct answer is C.
+71
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If you think someone has a broken leg you
+should:
+A) lie them on their side in the recovery position
+B) use your belt to strap their legs together
+C) send for the first aider or get other help
+D) lie them on their back
+The correct answer is C.
+72
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If someone gets some grit in their eye, the best
+thing you can do is:
+A) hold the eye open and wipe it with clean
+tissue paper
+B) ask them to rub the eye until it starts to water
+C) tell them to blink a couple of times
+D) hold the eye open and flush it with sterilised
+water or eyewash
+The correct answer is D.
+73
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Someone gets a large splinter in their hand. It is
+deep under the skin and it hurts. What should
+you do?
+A) Use something sharp to dig it out
+B) Make sure they get first aid
+C) Tell them to ignore it and let the splinter
+come out on its own
+D) Try to squeeze out the splinter with your
+thumbs
+The correct answer is B.
+74
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Someone collapses with stomach pain and
+there is no first aider on site. What should you
+do first?
+A) Get them to sit down
+B) Get someone to call the emergency services
+C) Get them to lie down in the recovery position
+D) Give them some painkillers
+The correct answer is B.
+75
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+Someone has got a nail in their foot. You are not
+a first aider. You must not pull out the nail
+because:
+A) you will let air and bacteria get into the
+wound
+B) the nail is helping to reduce the bleeding
+C) it will prove that the casualty was not
+wearing safety boots
+D) the nail is helping to keep their boot on
+The correct answer is B.
+76
+HS&E test download for operatives and specialists
+Emergency procedures and first aid
+Question
+If someone burns their hand the best thing you
+can do is:
+A) put the hand into cold water or under a cold
+running tap
+B) tell them to carry on working to exercise the
+hand
+C) rub barrier cream or Vaseline into the burn
+D) wrap your handkerchief around the burn
+The correct answer is A.
+77
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+It is your first day on site. You find that there is
+nowhere to wash your hands. What should you
+do?
+A) Wait until you get home, then wash them
+B) Go to a local café or pub and use the
+washbasin in their toilet
+C) Speak to your supervisor about the problem
+D) Bring your own bottle of water the next day
+The correct answer is C.
+78
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Look at these statements about illegal drugs in
+the workplace. Which one is true in relation to
+site work?
+A) Users of illegal drugs are a danger to
+everyone on site
+B) People who take illegal drugs work better
+and faster
+C) People who take illegal drugs take fewer
+days off work
+D) Taking illegal drugs is a personal choice so
+other people shouldn't worry about it
+The correct answer is A.
+79
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Your doctor has given you some medication.
+Which of these questions is the most important?
+A) Will it make me drowsy or unsafe to work?
+B) Will I work more slowly?
+C) Will my supervisor find out?
+D) Will I oversleep and be late for work?
+The correct answer is A.
+80
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Someone goes to the pub at lunchtime and has
+a couple of pints of beer. What should they do
+next?
+A) Drink plenty of strong coffee then go back to
+work
+B) Stay away from the site for the rest of the
+day
+C) Stay away for an hour and then go back to
+work
+D) Eat something, wait 30 minutes and then go
+back to work
+The correct answer is B.
+81
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You should only clean very dirty hands with:
+A) soap and water
+B) thinners
+C) white spirit
+D) paraffin
+The correct answer is A.
+82
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+If you get a hazardous substance on your
+hands, it can pass from your hands to your
+mouth when you eat. Give TWO ways to stop
+this.
+A) Wear protective gloves while you are
+working
+B) Wash your hands before eating
+C) Put barrier cream on your hands before
+eating
+D) Wear protective gloves then turn them
+inside-out before eating
+E) Wash your work gloves then put them on
+again before eating
+The correct answers are A and B.
+83
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You can catch an infection called tetanus from
+contaminated land or water. How does it get into
+your body?
+A) Through your nose when you breathe
+B) Through an open cut in your skin
+C) Through your mouth when you eat or drink
+D) It doesn't, it only infects animals and not
+people
+The correct answer is B.
+84
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You should not use white spirit or other solvents
+to clean your hands because they:
+A) strip the protective oils from the skin
+B) remove the top layer of skin
+C) block the pores of the skin
+D) carry harmful bacteria that attack the skin
+The correct answer is A.
+85
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Direct sunlight on bare skin can cause:
+A) dermatitis
+B) rickets
+C) acne
+D) skin cancer
+The correct answer is D.
+86
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You should not just rely on barrier cream to
+protect your skin from harmful substances
+because:
+A) it costs too much to use every day
+B) many harmful substances go straight
+through it
+C) it is difficult to wash off
+D) it can irritate your skin
+The correct answer is B.
+87
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+If you use skin barrier cream you should apply it:
+A) before you start work
+B) when you finish work
+C) as part of first-aid treatment
+D) when you can't find your gloves
+The correct answer is A.
+88
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Exposure to engine oil and other mineral oils
+can cause:
+A) skin problems
+B) heart disease
+C) breathing problems
+D) vibration white finger
+The correct answer is A.
+89
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You can get occupational dermatitis from:
+A) hand-arm vibration
+B) another person with dermatitis
+C) some types of strong chemical
+D) sunlight
+The correct answer is C.
+90
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+Which of the following species of animal is the
+most likely carrier of Weil's disease
+(leptospirosis) on construction sites?
+A) Rabbits
+B) Rats
+C) Squirrels
+D) Mice
+The correct answer is B.
+91
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+To help keep rats away, everyone on site
+should:
+A) buy rat traps and put them around the site
+B) ask the local authority to put down rat poison
+C) throw food scraps over the fence or hoarding
+D) only put food and drink rubbish in bins
+provided
+The correct answer is D.
+92
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+You are more likely to catch Weil’s disease
+(leptospirosis) if you:
+A) work near wet ground, waterways or sewers
+B) work near air-conditioning units
+C) fix showers or baths
+D) drink water from a standpipe
+The correct answer is A.
+93
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+The early signs of Weil's disease (leptospirosis)
+can be easily confused with:
+A) dermatitis
+B) diabetes
+C) hay fever
+D) influenza (flu)
+The correct answer is D.
+94
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+What sort of rest area should your employer
+provide on site?
+A) A covered area
+B) A covered area and some chairs
+C) A covered area, tables and chairs, and
+something to heat water and food
+D) Nothing, employers don't have to provide
+rest areas
+The correct answer is C.
+95
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+What is the legal minimum that should be
+provided on site for washing your hands?
+A) Nothing, there is no need to provide washing
+facilities
+B) A bowl, kettle and towel
+C) A cold water standpipe and paper towels
+D) Hot and cold water (or warm water), soap
+and a way to dry your hands
+The correct answer is D.
+96
+HS&E test download for operatives and specialists
+Health and welfare
+Question
+The toilets on your site are always dirty or do
+not flush. What should you do?
+A) Try not to use the toilets while you are at
+work
+B) Tell the person in charge of the site about
+the problem
+C) Try to fix the fault yourself
+D) See if you can use the toilets in a nearby
+café or pub
+The correct answer is B.
+97
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+If using on-tool extraction to control dust from a
+power tool it is important to check that:
+A) the extraction unit is the correct type
+B) the extraction filters are clear and the unit is
+extracting dust
+C) you are using the power tool correctly
+D) all of these answers
+The correct answer is D.
+98
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+When drilling, cutting, sanding or grinding you
+can breathe in high levels of harmful dust.
+These levels are likely to be highest when
+working:
+A) outside on a still day
+B) outside on a windy day
+C) in a small room
+D) in a large indoor space
+The correct answer is C.
+99
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You have finished your work and need to sweep
+up the dust created. What should you do?
+A) Dampen down the area
+B) Make sure there is plenty of ventilation
+C) Put your protective mask back on
+D) All of these answers
+The correct answer is D.
+100
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You are using water as part of dust control and
+run out. Should you:
+A) carry on as you have nearly finished
+B) stop and refill with water
+C) ask everyone to clear the area and then
+carry on
+D) carry on but get someone to sweep up
+afterwards
+The correct answer is B.
+101
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+When using power tools it is important to:
+A) stop dust getting into the air
+B) stand downwind of any dust
+C) do the work quickly to limit dust exposure
+D) only undertake the work during damp or wet
+weather
+The correct answer is A.
+102
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You have been asked to do some work that will
+create dust. What should you do?
+A) You should not do the work. Dust is highly
+dangerous
+B) Use equipment that will eliminate or reduce
+the amount of dust whilst wearing correct
+personal protective equipment (PPE)
+C) Start work – no controls are needed as it's
+only dust
+D) Work for short periods at a time
+The correct answer is B.
+103
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+When using water to keep dust down when
+cutting you must ensure:
+A) there is as much water as possible
+B) the water flow is correctly adjusted
+C) somebody stands next to you and pours
+water from a bottle
+D) water is poured onto the surface to soak it,
+before you start cutting
+The correct answer is B.
+104
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You need to use a power tool to cut or grind
+materials. Give TWO ways to control the dust
+from getting into the air.
+A) Work slowly and carefully
+B) Fit a dust extractor or collector to the
+machine
+C) Wet cutting
+D) Keep the area clean and tidy
+E) Wear a dust mask or respirator
+The correct answers are B and C.
+105
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+If you use a power tool to cut or grind materials,
+why must the dust be collected and not get into
+the air?
+A) To save time and avoid having to clear up
+the mess
+B) Most dust can be harmful if breathed in
+C) The tool will go faster if the dust is collected
+D) You do not need a machine guard if the dust
+is collected
+The correct answer is B.
+106
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Occupational asthma can stop you working
+again with certain substances. It is caused by:
+A) exposure to loud noise
+B) exposure to rat urine
+C) skin contact with any hazardous substance
+D) breathing in hazardous dust, fumes or
+vapours
+The correct answer is D.
+107
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+There are many kinds of dust and fumes at
+work. Breathing them in over time can cause
+you to develop:
+A) occupational lung disease
+B) occupational dermatitis
+C) skin cancer
+D) sore throat
+The correct answer is A.
+108
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Exposure to which of the following may NOT
+result in lung disease?
+A) Asbestos
+B) Bird droppings
+C) Strong smells
+D) Silica dust
+The correct answer is C.
+109
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Pigeon droppings and nests, which can be
+hazardous to your health, are found in an area
+where you are required to work. You should:
+A) carry on with your work carefully
+B) stop work and seek advice
+C) try to catch the pigeons
+D) let them fly away before carrying on with
+your work
+The correct answer is B.
+110
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+What is the biggest cause of long-term health
+issues in the construction industry?
+A) Loud noise
+B) Being struck by a vehicle
+C) Slipping and tripping
+D) Breathing in hazardous substances
+The correct answer is D.
+111
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You need special respiratory protective
+equipment (RPE) to handle a chemical. None
+has been provided. What should you do?
+A) Get on with the job but try to work quickly
+B) Do not start work until you have been given
+the correct RPE and training
+C) Start the work but take a break now and
+again
+D) Sniff the substance to see if it makes you
+feel ill
+The correct answer is B.
+112
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+You have been given a dust mask to protect you
+against hazardous fumes. What should you do?
+A) Do not start work until you have the correct
+respiratory protective equipment (RPE)
+B) Do the job but work quickly
+C) Start work but take a break now and again
+D) Wear a second dust mask on top of the first
+one
+The correct answer is A.
+113
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Which of the following do you need to do to
+ensure that your mask works?
+A) Check it’s the correct type needed
+B) Pass a face fit test wearing the mask
+C) Check you are wearing it correctly
+D) All of these answers
+The correct answer is D.
+114
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Generally speaking how long can you use the
+same disposable mask for?
+A) Five working days
+B) Until it looks too dirty to wear
+C) One day or one shift
+D) 28 days
+The correct answer is C.
+115
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+Which of these activities does NOT create silica
+dust, which is harmful if breathed in?
+A) Sawing timber and plywood
+B) Cutting kerbs, stone, paving slabs, bricks
+and blocks
+C) Breaking up concrete floors and screeds
+D) Chasing out walls and mortar joints or
+sweeping up rubble
+The correct answer is A.
+116
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+When drilling, cutting, sanding or grinding what
+is the best way to protect your long term health
+from harmful dust?
+A) Use dust extraction or wet cut and wear light
+eye protection
+B) Wear a FFP3-rated dust mask and impact
+goggles
+C) Wear any disposable dust mask, hearing
+protection and impact goggles
+D) Use dust extraction or wet cut, wear a
+FFP3-rated dust mask, hearing protection
+and impact goggles
+The correct answer is D.
+117
+HS&E test download for operatives and specialists
+Respiratory risks
+Question
+The high levels of solvents in some paints and
+resins can cause:
+A) headaches, dizziness and sickness
+B) lung problems
+C) effects on other parts of your body
+D) all of these answers
+The correct answer is D.
+118
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Noise can damage your hearing. What is an
+early sign of this?
+A) There are no early signs
+B) Temporary deafness or ringing noise in your
+ears
+C) A skin rash around the ears
+D) Ear infections
+The correct answer is B.
+119
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+After working with noisy equipment you have a
+‘ringing’ sound in your ears. What does this
+mean?
+A) Your hearing has been temporarily damaged
+B) You have also been subjected to vibration
+C) You are about to go down with the flu
+D) The noise level was high but acceptable
+The correct answer is A.
+120
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Noise over a long time can damage your
+hearing. Can this damage be reversed?
+A) Yes, with time
+B) Yes, if you have an operation
+C) No, the damage is permanent
+D) Yes, if you change jobs
+The correct answer is C.
+121
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+How can noise affect your health? Give TWO
+answers.
+A) Headaches
+B) Ear infections
+C) Hearing loss
+D) Waxy ears
+E) Vibration white finger
+The correct answers are A and C.
+122
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+You think the noise at work may have damaged
+your hearing. What should you do?
+A) Plug your ears with cotton wool to stop any
+more damage
+B) Nothing, the damage has already been done
+C) Go off sick
+D) Ask your employer or doctor to arrange a
+hearing test
+The correct answer is D.
+123
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Someone near you is using noisy equipment
+and you have no hearing protection. What
+should you do?
+A) Ask them to stop what they are doing
+B) Carry on with your work because it is always
+noisy on site
+C) Leave the area until you have the correct
+personal protective equipment (PPE)
+D) Speak to the other person’s supervisor
+The correct answer is C.
+124
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you wear hearing protection, it will:
+A) stop you hearing all noise
+B) reduce damaging noise to an acceptable
+level
+C) repair your hearing if it is damaged
+D) make you hear better
+The correct answer is B.
+125
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you need to wear disposable ear plugs how
+should you insert them so they protect your
+hearing from damage?
+A) Only put them in when it starts getting very
+noisy
+B) Only ever insert them half way into your ear
+C) Roll them up and insert them as far as you
+can, while pulling the top of your ear up to
+open up the ear canal
+D) Fold them in half and wedge them into your
+ear
+The correct answer is C.
+126
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+TWO recommended ways to protect your
+hearing are by using:
+A) rolled tissue paper
+B) cotton wool pads over your ears
+C) ear plugs
+D) soft cloth pads over your ears
+E) ear defenders
+The correct answers are C and E.
+127
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+As a rule of thumb noise levels may be a
+problem if you have to shout to be clearly heard
+by someone who is standing:
+A) 2 m away
+B) 4 m away
+C) 5 m away
+D) 6 m away
+The correct answer is A.
+128
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+You need to wear ear defenders but an ear pad
+is missing from one of the shells. What should
+you do?
+A) Leave them off and work without any hearing
+protection
+B) Put them on and start working with them as
+they are
+C) Do not work in noisy areas until they are
+replaced
+D) Wrap your handkerchief around the shell
+and carry on working
+The correct answer is C.
+129
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you have to work in a 'hearing protection
+zone', you must:
+A) not make any noise
+B) wear the correct hearing protection at all
+times
+C) take hearing protection with you in case you
+need to use it
+D) wear hearing protection if the noise gets too
+loud for you
+The correct answer is B.
+130
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Why is vibration a serious health issue?
+A) There are no early warning signs
+B) The long-term effects of vibration are not
+known
+C) There is no way that exposure to vibration
+can be prevented
+D) Vibration can cause a disabling injury that
+cannot be cured
+The correct answer is D.
+131
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+What are THREE early signs of vibration white
+finger or hand-arm vibration syndrome (HAVS)?
+A) Temporary loss of feeling in the fingers
+B) Fingertips turn white
+C) Rash on fingers
+D) Tingling or pins and needles sensation in the
+fingers
+E) Blisters
+The correct answers are A, B and D.
+132
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Hand-arm vibration syndrome (HAVS) can
+cause:
+A) skin cancer
+B) skin irritation, like dermatitis
+C) blisters on your hands and arms
+D) damaged blood vessels and nerves in your
+fingers and hands
+The correct answer is D.
+133
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+You have been using a vibrating tool. The end of
+your fingers are starting to tingle. What does this
+mean?
+A) You can carry on using the tool but you must
+loosen your grip
+B) You must not use this tool, or any other
+vibrating tool, ever again
+C) You need to report your symptoms before
+they cause a problem
+D) You can carry on using the tool but you must
+hold it tighter
+The correct answer is C.
+134
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+What is vibration white finger or hand-arm
+vibration syndrome (HAVS)?
+A) A mild skin rash that will go away
+B) A serious skin condition that will not clear up
+C) Severe frostbite
+D) A sign that your hands and arms have or are
+on the way to being permanently damaged
+The correct answer is D.
+135
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+Which of these is most likely to cause vibration
+white finger?
+A) Handsaw
+B) Hammer drill
+C) Hammer and chisel
+D) Battery-powered screwdriver
+The correct answer is B.
+136
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+You are likely to suffer LESS from hand-arm
+vibration if you are:
+A) very cold but dry
+B) cold and wet
+C) warm and dry
+D) very wet but warm
+The correct answer is C.
+137
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you need to use a vibrating tool, even for a
+short time, how can you help reduce the risk of
+hand-arm vibration?
+A) Do not grip the tool too tightly
+B) Hold the tool away from you, at arm's length
+C) Use more force
+D) Hold the tool more tightly
+The correct answer is A.
+138
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you have to use a vibrating tool, what would
+you expect your supervisor to do?
+A) Measure the level of vibration while you use
+the tool
+B) Explain the risk assessment and the safest
+way and length of time each day that you
+can use the tool
+C) Watch you use the tool to assess the level of
+vibration
+D) Help you to make up your own safe system
+of work
+The correct answer is B.
+139
+HS&E test download for operatives and specialists
+Noise and vibration
+Question
+If you have to use a vibrating tool, how can you
+help reduce the effects of hand-arm vibration?
+A) Hold the tool tightly
+B) Do the work in short spells
+C) Do the job in one long burst
+D) Only use one hand on the tool at a time
+The correct answer is B.
+140
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+What equipment should you have if you are
+doing non-licensed work on asbestos-containing
+materials?
+A) Disposable overalls ('type 5')
+B) Suitable respiratory protective equipment
+(RPE) (e.g. disposable face mask with a
+FFP3 rating)
+C) Laceless footwear
+D) All of these answers
+The correct answer is D.
+141
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Exposure to asbestos fibres may result in which
+disease?
+A) Mesothelioma
+B) Asbestosis
+C) Lung cancer
+D) All of these answers
+The correct answer is D.
+142
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+After asbestos, which of the following causes
+the most ill-health to construction workers?
+A) Wood and MDF dust
+B) Diesel fumes
+C) Silica dust
+D) Resin, solvent and paint vapours
+The correct answer is C.
+143
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Where might you come across asbestos?
+A) In a house built between 1950 and 1990
+B) In any building built or refurbished before the
+year 2000
+C) In industrial buildings built between 1920
+and 1990
+D) Asbestos has now been removed from all
+buildings
+The correct answer is B.
+144
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+How can asbestos be correctly identified?
+A) The dust gives off a strong smell
+B) By getting a sample analysed in a lab
+C) By the colour of the dust
+D) By putting a piece in water and seeing if it
+dissolves
+The correct answer is B.
+145
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+What training do you need to work with or
+remove asbestos cement products?
+A) General asbestos awareness training
+B) Having a CSCS card tells me all I need to
+know
+C) Training for non-licensable asbestos work
+D) None – anyone can work with asbestos
+cement
+The correct answer is C.
+146
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you think you have found some asbestos, the
+first thing you should do is:
+A) stop work and warn others
+B) take a sample to your supervisor
+C) put the bits in a bin and carry on with your
+work
+D) find the first aider
+The correct answer is A.
+147
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you breathe in asbestos dust it can cause:
+A) aching muscles and painful joints
+B) throat infections
+C) lung diseases
+D) dizziness and headaches
+The correct answer is C.
+148
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+This sign should be used for
+labelling:
+A) asbestos waste
+B) raw asbestos
+C) any product containing asbestos
+D) all of these answers
+The correct answer is D.
+149
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+You find an unmarked container that you think
+might contain chemicals. What is the first thing
+you should do?
+A) Smell the chemical to see what it is
+B) Put it in a bin to get rid of it
+C) Ensure it remains undisturbed and report it
+D) Taste the chemical to see what it is
+The correct answer is C.
+150
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Cement bags have an additive to help prevent
+allergic dermatitis. When using a new bag what
+should be checked?
+A) The bag is undamaged
+B) The 'use by' date has not expired
+C) It has been stored in a dry place
+D) The contents are not hard and gone off
+The correct answer is B.
+151
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Why should you not kneel in wet cement, screed
+or concrete?
+A) It will make your trousers wet
+B) It is not an effective way to work
+C) It can cause serious chemical burns to your
+legs
+D) It will affect the finish
+The correct answer is C.
+152
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Wet cement, mortar and concrete is hazardous
+to your health as it causes:
+A) dizziness and headaches
+B) chemical burns and dermatitis
+C) muscle aches
+D) arc eye
+The correct answer is B.
+153
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+Which of these will give you health and safety
+information about a hazardous substance?
+A) The site diary
+B) The delivery note
+C) The COSHH assessment
+D) The accident book
+The correct answer is C.
+154
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+You need to use a hazardous substance. Who
+should explain the health risks and safe method
+of work you need to follow (the COSHH
+assessment) before you start?
+A) A Health and Safety Executive (HSE)
+inspector
+B) The site first aider
+C) Your supervisor or employer
+D) The site security people
+The correct answer is C.
+155
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+A COSHH assessment tells you how:
+A) to lift heavy loads and how to protect
+yourself
+B) to work safely in confined spaces
+C) a substance might harm you and how to
+protect yourself when you are using it
+D) noise levels are assessed and how to
+protect your hearing
+The correct answer is C.
+156
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+The safest way to use a hazardous substance is
+to:
+A) get on with the job as quickly as possible
+B) read your employer's health and safety
+policy
+C) understand the COSHH assessment and
+follow the instructions
+D) ask someone who has already used it
+The correct answer is C.
+157
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you see either of these
+labels on a substance what
+should you do?
+A) Do not use it as the substance is poisonous
+B) Find out what protection you need as the
+substance is corrosive and can damage your
+skin upon contact
+C) Wash your hands after you have used the
+substance
+D) Find out what hand cleaner you will need as
+the substance will not wash off easily
+The correct answer is B.
+158
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you see either of these
+labels on a substance what
+should you do?
+A) Find out what protection you need as the
+substance is harmful and could damage your
+health
+B) Use sparingly as substance is expensive
+C) Wear gloves as the substance can burn your
+skin
+D) Do not use it as the substance is poisonous
+The correct answer is A.
+159
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+How can you tell if a product is hazardous?
+A) By warning symbols on the container or
+packaging label
+B) By the shape of the container
+C) It will always be in a black container
+D) It will always be in a cardboard box
+The correct answer is A.
+160
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+The packaging of a substance has the word
+‘SENSITISER’ on it. This means that:
+A) you could become allergic to it and have
+allergic reactions
+B) it must be mixed with water before you can
+use it
+C) it is perfectly safe to use without personal
+protective equipment (PPE)
+D) it should not be used under any
+circumstances
+The correct answer is A.
+161
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you see either of these
+labels on a substance what
+should you do?
+A) Make sure it is stored out of the reach of
+children
+B) Use the substance very carefully and make
+sure you don't spill or splash it on yourself
+C) Do not use it as the substance is poisonous
+D) Find out what protection you need as the
+substance is toxic and in low quantities could
+seriously damage your health or kill you
+The correct answer is D.
+162
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you see either of these
+labels on a substance what
+should you do?
+A) Find out how to handle the substance as it is
+fragile
+B) Find out how to use the substance safely as
+it could explode
+C) Find out how to use the substance safely as
+it could catch fire easily
+D) Do not use the substance as it could kill you
+The correct answer is B.
+163
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+If you see either of these
+labels on a substance what
+should you do?
+A) Dispose of the substance or contents by
+burning
+B) Find out how to use the substance safely as
+it could explode
+C) Find out how to use the substance safely as
+it is flammable (could catch fire easily)
+D) Warm up the contents first, with heat or a
+naked flame
+The correct answer is C.
+164
+HS&E test download for operatives and specialists
+Hazardous substances
+Question
+What does this warning sign
+mean?
+A) Substance can explode
+B) Substance will cause heartburn if swallowed
+C) Substance can glow in the dark
+D) Substance can cause long-term serious
+health problems
+The correct answer is D.
+165
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+When do you need to wear eye protection?
+A) On very bright, sunny days
+B) If there is a risk of eye injury and if it is the
+site rules
+C) When your employer can afford it
+D) Only if you work with chemicals
+The correct answer is B.
+166
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+If there is a risk of materials flying into your
+eyes, you should wear:
+A) tinted welding goggles
+B) laser safety glasses
+C) chemical-resistant goggles
+D) impact-resistant goggles
+The correct answer is D.
+167
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+What type of eye protection do you need to
+wear if you are using a cartridge-operated tool
+or compressed gas tool (nail gun)?
+A) Light eye protection or safety glasses
+B) Normal prescription glasses or sunglasses
+C) Impact-rated goggles
+D) None – they aren't needed as there is a
+minimal risk of injury
+The correct answer is C.
+168
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You need to use a grinder, cut-off saw, cartridge
+tool or nail gun. What type of eye protection will
+you need?
+A) Impact-resistant goggles or full face shield
+B) Welding goggles
+C) Reading glasses or sunglasses
+D) Light eye protection (safety glasses)
+The correct answer is A.
+169
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Safety footwear with a protective mid-sole will
+protect you against:
+A) twisting your ankle
+B) chemicals burning your feet
+C) nails or sharp objects puncturing the
+underside of your foot if you stand on them
+D) getting blisters
+The correct answer is C.
+170
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+When should you wear safety footwear on site?
+A) Only when working at ground level or
+outside
+B) Until the site starts to look finished
+C) All the time
+D) When you are working all day on site and
+not just visiting
+The correct answer is C.
+171
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You need to handle a hazardous substance. You
+should wear the correct gloves to help stop:
+A) skin disease
+B) vibration white finger
+C) Raynaud's syndrome
+D) arthritis
+The correct answer is A.
+172
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Do all types of glove protect hands against
+chemicals?
+A) Yes, all gloves are made to the same
+standard
+B) Only if you put barrier cream on your hands
+as well
+C) No, different types of glove protect against
+different types of hazard
+D) Only if you cover the gloves with barrier
+cream
+The correct answer is C.
+173
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Look at these statements about using power
+tools while wearing gloves. Which one is false?
+A) Anti-vibration gloves will protect you against
+the effects of vibration
+B) Gloves will keep your hands warm and dry,
+which reduces the effects of vibration
+C) Gloves provide a better grip so you don’t
+need to grip too tightly, which reduces the
+effects of vibration
+D) Gloves will protect you from cuts and
+abrasions
+The correct answer is A.
+174
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You need to wear a full body harness. You have
+never used one before. What should you do?
+A) Ask for expert advice and training
+B) Ask someone already wearing a harness to
+show you what to do
+C) Try to work it out for yourself
+D) Read the instruction book
+The correct answer is A.
+175
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You must wear head protection on site at all
+times unless you are:
+A) self-employed
+B) working alone
+C) in a safe area, like the site office or canteen
+D) working in very hot weather
+The correct answer is C.
+176
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+To get the maximum protection from your safety
+helmet you should wear it:
+A) back to front
+B) pushed back on your head
+C) square on your head
+D) pulled forward
+The correct answer is C.
+177
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Look at these statements about wearing a
+safety helmet in hot weather. Which one is true?
+A) You can drill holes in it to keep your head
+cool
+B) You can wear it back-to-front if it is more
+comfortable that way
+C) You must take it off during the hottest part of
+the day
+D) You must wear it at all times and in the right
+way
+The correct answer is D.
+178
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+If you drop your safety helmet from height onto
+a hard surface, you should:
+A) have any cracks repaired then carry on
+wearing it
+B) make sure there are no cracks then carry on
+wearing it
+C) work without a safety helmet until you can
+get a new one
+D) stop work and get a new safety helmet
+The correct answer is D.
+179
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You have been given disposable earplugs to
+use, but they keep falling out. What should you
+do?
+A) Throw them away and work without them
+B) Stop work until you get more suitable ones
+and are shown how to fit them
+C) Put two ear plugs in each ear so they stay in
+place
+D) Put rolled-up tissue paper in each ear
+The correct answer is B.
+180
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Your employer must supply you with personal
+protective equipment (PPE):
+A) twice a year
+B) if you pay for it
+C) if it is in the contract
+D) if you need to be protected
+The correct answer is D.
+181
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Do you have to pay for any personal protective
+equipment (PPE) you need?
+A) Yes, you must pay for all of it
+B) Only if you need to replace lost or damaged
+PPE
+C) Yes, but you only have to pay half the cost
+D) No, your employer must pay for it
+The correct answer is D.
+182
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Who should provide you with any personal
+protective equipment (PPE) you need, including
+the means to maintain it?
+A) Your employer
+B) You must buy your own
+C) Anyone on site with a budget
+D) No-one has a duty to provide it
+The correct answer is A.
+183
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+If your personal protective equipment (PPE)
+gets damaged you should:
+A) throw it away and work without it
+B) stop what you are doing until it is replaced
+C) carry on wearing it but work more quickly
+D) try to repair it
+The correct answer is B.
+184
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You have to work outdoors in bad weather. Your
+employer should supply you with correctly fitting
+waterproof clothing because:
+A) it will have the company name and logo on it
+B) you need protecting from the weather and
+are less likely to get muscle strains if you are
+warm and dry
+C) you are less likely to catch Weil's disease
+(leptospirosis) if you are warm and dry
+D) your supervisor will be able to see you more
+clearly in the rain
+The correct answer is B.
+185
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+Look at these statements about personal
+protective equipment (PPE). Which one is NOT
+true?
+A) You must pay for any damage or loss
+B) You must store it correctly when you are not
+using it
+C) You must report any damage or loss to your
+supervisor
+D) You must use it as instructed
+The correct answer is A.
+186
+HS&E test download for operatives and specialists
+Personal protective equipment
+Question
+You are about to start a job. How will you know if
+you need any extra personal protective
+equipment (PPE)?
+A) By looking at your employer's health and
+safety policy
+B) You will just be expected to know
+C) From the risk assessment or method
+statement
+D) A letter will be sent to your home
+The correct answer is C.
+187
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You need to use an extension cable. What TWO
+things must you do?
+A) Only uncoil the length of cable you need
+B) Uncoil the whole cable
+C) Clean the whole cable with a damp cloth
+D) Check the whole cable and connectors for
+damage
+E) Only check the cable you need for damage
+The correct answers are B and D.
+188
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You need to run an electrical cable across an
+area used by vehicles. What TWO things should
+you do?
+A) Wrap the cable in yellow tape so that drivers
+can see it
+B) Cover the cable with a protective ramp
+C) Cover the cable with scaffold boards
+D) Put up a sign that says ‘Ramp ahead’
+E) Run the cable at head height
+The correct answers are B and D.
+189
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You need to work near an electrical cable. The
+cable has bare wires. What should you do?
+A) Quickly touch the cable to see if it is live
+B) Check there are no sparks coming from the
+cable and then start work
+C) Tell your supervisor and keep well away
+D) Push the cable out of the way so that you
+can start work
+The correct answer is C.
+190
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+If an extension cable has a cut in its outer cover,
+you should:
+A) check the copper wires aren't showing in the
+cut and then use the cable
+B) put electrical tape around the damaged part
+C) report the fault and make sure no-one else
+uses the cable
+D) put a bigger fuse in the cable plug
+The correct answer is C.
+191
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+What is the best way to protect an extension
+cable while you work, as well as minimising trip
+hazards?
+A) Run the cable above head height
+B) Run the cable by the shortest route
+C) Cover the cable with yellow tape
+D) Cover the cable with pieces of wood
+The correct answer is A.
+192
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Untidy leads and extension cables are
+responsible for many trips and lost work time
+injuries. What TWO things should you do to
+help?
+A) Run cables and leads above head height
+and over the top of doorways and walkways
+rather than across the floor
+B) Tie any excess cables and leads up into the
+smallest coil possible
+C) Keep cables and leads close to the wall and
+not in the middle of the floor or walkway
+D) Make sure your cables go where you want
+them to and not worry about others
+E) Unplug the nearest safety lighting and use
+these sockets instead
+The correct answers are A and C.
+193
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+To operate a powered hand tool, you must be:
+A) over 16 years old
+B) over 18 years old
+C) trained and competent
+D) 21 years old or over
+The correct answer is C.
+194
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You must be fully trained before you use a
+cartridge-operated tool. Why?
+A) They are heavy and could cause manual
+handling injuries
+B) They operate like a gun and can be
+dangerous in inexperienced hands
+C) Using one can cause dermatitis
+D) They have exposed electrical parts
+The correct answer is B.
+195
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+If the guard is missing from a power tool you
+should:
+A) try to make another guard
+B) use the tool but try to work quickly
+C) not use the tool until a proper guard has
+been fitted
+D) use the tool but work carefully and slowly
+The correct answer is C.
+196
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+If you need to use a power tool with a rotating
+blade, you should:
+A) remove the guard so that you can clearly
+see the blade
+B) adjust the guard to expose just enough
+blade to let you do the job
+C) remove the guard but wear leather gloves to
+protect your hands
+D) adjust the guard to expose the maximum
+amount of blade
+The correct answer is B.
+197
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Most cutting and grinding machines have
+guards. What are the TWO main functions of the
+guard?
+A) To stop materials getting onto the blade or
+wheel
+B) To give you a firm handhold
+C) To balance the machine
+D) To stop fragments flying into the air
+E) To stop you coming into contact with the
+blade or wheel
+The correct answers are D and E.
+198
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+If you need to use a hand tool or power tool on
+site it must be:
+A) made in the UK
+B) the right tool for the job and inspected at the
+start of each week
+C) bought from a builders merchant
+D) the right tool for the job and inspected before
+you use it
+The correct answer is D.
+199
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Before you adjust an electric hand tool you
+should:
+A) switch it off but leave the plug in the socket
+B) switch it off and remove the plug from the
+socket
+C) do nothing in particular
+D) put tape over the ON/OFF switch
+The correct answer is B.
+200
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+If the head on your hammer comes loose you
+should:
+A) stop work and get the hammer repaired or
+replaced
+B) find another heavy tool to use instead of the
+hammer
+C) keep using it but be aware that the head
+could come off at any time
+D) tell the other people near you to keep out of
+the way
+The correct answer is A.
+201
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Do you need to inspect simple hand tools like
+trowels, screwdrivers, saws and hammers?
+A) No, never
+B) Yes, if they have not been used for a couple
+of weeks
+C) Yes, they should be checked each time you
+use them
+D) Only if someone else has borrowed them
+The correct answer is C.
+202
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Someone near you is using a rotating laser
+level. What, if any, is the health hazard likely to
+affect you?
+A) Skin cancer
+B) None – if used correctly they are safe
+C) Gradual blindness
+D) Burning of the skin, similar to sunburn
+The correct answer is B.
+203
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+What is the main danger if
+you use a chisel or bolster
+with a 'mushroomed' head?
+A) It will shatter and send fragments flying into
+the air
+B) It will damage the face of the hammer
+C) The shaft of the chisel will bend when you hit
+it
+D) You will have to sharpen the chisel more
+often
+The correct answer is A.
+204
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Look at these statements about power tools.
+Which one is true?
+A) Always carry the tool by its cord
+B) Always unplug the tool by pulling its cord
+C) Always unplug the tool when you are not
+using it
+D) Always leave the tool plugged in when you
+check or adjust it
+The correct answer is C.
+205
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+It is dangerous to run an abrasive wheel faster
+than its recommended top speed. Why?
+A) The wheel will get clogged and stop
+B) The motor could burst into flames
+C) The wheel could shatter and burst into many
+pieces
+D) The safety guard cannot be used
+The correct answer is C.
+206
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+It is safe to work close to an overhead power
+line if:
+A) you do not touch the line for more than 30
+seconds
+B) you use a wooden ladder
+C) the power is switched off
+D) it is not raining
+The correct answer is C.
+207
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You are using electric equipment when it cuts
+out. You should:
+A) shake it to see if it will start again
+B) pull the electric cable to see if it is loose
+C) switch the power off and on a few times
+D) switch off the power and look for signs of
+damage
+The correct answer is D.
+208
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Someone near you is using a disc-cutter to cut
+concrete blocks. What THREE immediate
+hazards are likely to affect you?
+A) Flying fragments
+B) Dermatitis
+C) Harmful dust in the air
+D) High noise levels
+E) Vibration white finger
+The correct answers are A, C and D.
+209
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You need to use an air-powered tool. Which of
+these is NOT a hazard?
+A) Electric shock
+B) Hard-arm vibration
+C) Airborne dust and flying fragments
+D) Leaking hoses
+The correct answer is A.
+210
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+When do you need to check tools and
+equipment for damage?
+A) Each time before use
+B) Every day
+C) Once a week
+D) At least once a year
+The correct answer is A.
+211
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+What are the TWO main areas of visual
+inspections you should carry out before each
+use of a power tool?
+A) Check the carry case isn't broken
+B) Check the power lead, plug and casing are
+in good condition
+C) Check the manufacturer's label hasn't come
+off
+D) Check switches, triggers and guards are
+adjusted and work correctly
+E) Check if there is an upgraded model
+available
+The correct answers are B and D.
+212
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You should use a RCD (residual current device)
+with 230 volt tools because it:
+A) lowers the voltage
+B) quickly cuts off the power if there is a fault
+C) makes the tool run at a safe speed
+D) saves energy and lowers costs
+The correct answer is B.
+213
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+How do you check if a RCD (residual current
+device) connected to a power tool is working?
+A) Switch the tool on and off
+B) Press the test button on the RCD (residual
+current device)
+C) Switch the power on and off
+D) Run the tool at top speed to see if it cuts out
+The correct answer is B.
+214
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+You need to use a 230 volt item of equipment.
+How should you protect yourself from an electric
+shock?
+A) Use a generator
+B) Put up safety screens around you
+C) Use a portable RCD (residual current
+device)
+D) Wear rubber boots and gloves
+The correct answer is C.
+215
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+The Portable Appliance Testing (PAT) label on a
+power tool tells you:
+A) when the next safety check is due
+B) when the tool was made
+C) who tested the tool before it left the factory
+D) its earth-loop impedance
+The correct answer is A.
+216
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+On building sites, the recommended safe
+voltage for electrical equipment is:
+A) 12 volts
+B) 24 volts
+C) 110 volts
+D) 230 volts
+The correct answer is C.
+217
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+The colour of a 110 volt power cable and
+connector should be:
+A) black
+B) red
+C) blue
+D) yellow
+The correct answer is D.
+218
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Why should you try to use battery-powered tools
+rather than electrical ones?
+A) They are cheaper to run
+B) They will not give you an electric shock
+C) They will not give you hand-arm vibration
+D) They do not need to be tested or serviced
+The correct answer is B.
+219
+HS&E test download for operatives and specialists
+Electrical safety and hand held tools and equipment
+Question
+Why do building sites use a 110 volt electricity
+supply instead of the usual 230 volt domestic
+supply?
+A) It is cheaper
+B) It is less likely to kill you
+C) It moves faster along the cables
+D) It is safer for the environment
+The correct answer is B.
+220
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+A crane has to do a difficult lift. The signaller
+asks you to help, but you are not trained in plant
+signals. What should you do?
+A) Politely refuse and explain you don't know
+how to signal
+B) Start giving signals to the crane driver
+C) Only help if the signaller really can't manage
+alone
+D) Ask the signaller to show you what signals to
+use
+The correct answer is A.
+221
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+A truck has to tip materials into a trench. Who
+should give signals to the truck driver?
+A) Anyone who is wearing a hi-vis coat
+B) Someone standing in the trench
+C) Someone who knows the signals
+D) Only the person who is trained and
+appointed for the job
+The correct answer is D.
+222
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Assemble here in the event of a fire
+B) Fire extinguishers and fire-fighting
+equipment kept here
+C) Parking reserved for emergency service
+vehicles
+D) Do not store flammable materials here
+The correct answer is B.
+223
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Fire alarm call point
+B) Hot surface, do not touch
+C) Wear flameproof hand protection
+D) Emergency light switch
+The correct answer is A.
+224
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Press here to sound the fire alarm
+B) Fire hose reel located here
+C) Turn key to open fire door
+D) Do not use if there is a fire
+The correct answer is B.
+225
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Wear hearing protection if you want to
+B) You must wear hearing protection
+C) No personal stereos or MP3 players
+D) Caution, noisy machinery
+The correct answer is B.
+226
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Safety glasses cleaning station
+B) Warning, bright lights or lasers
+C) Caution, poor lighting
+D) You must wear safety eye protection
+The correct answer is D.
+227
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+Blue and white signs are:
+A) mandatory signs – meaning you MUST do
+something
+B) prohibition signs – meaning you MUST NOT
+do something
+C) warning signs – alerting you to hazards or
+danger
+D) safe condition signs – giving you information
+The correct answer is A.
+228
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Safety boots or safety shoes must be worn
+B) Wellington boots must be worn
+C) Be aware of slip and trip hazards
+D) No dirty footwear past this point
+The correct answer is A.
+229
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) You must carry safety gloves at all times
+B) Dispose of used safety gloves here
+C) Safety gloves do not need to be worn
+D) Safety gloves must be worn
+The correct answer is D.
+230
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Wear white clothes at night
+B) Hi-vis clothing must be worn
+C) Do nothing, it only applies to managers
+D) Cover up bare arms
+The correct answer is B.
+231
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Smoking is allowed
+B) Danger flammable materials present
+C) No smoking
+D) No explosives or naked flames
+The correct answer is C.
+232
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) No lone working
+B) No entry without a hard hat
+C) No pedestrians or entry for people on foot
+D) No entry during the day
+The correct answer is C.
+233
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+Round red and white signs
+with a diagonal line are:
+A) mandatory signs – meaning you MUST do
+something
+B) prohibition signs – meaning you MUST NOT
+do something
+C) warning signs – alerting you to hazards or
+danger
+D) safe condition signs – giving you information
+The correct answer is B.
+234
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Do not jump across any gaps in the scaffold
+B) Do not work on the first lift of the scaffold
+C) Do not access the scaffold because it is
+incomplete or not safe
+D) Do not walk under the scaffold
+The correct answer is C.
+235
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) No running allowed
+B) There is no escape route
+C) This is a fire door
+D) Fire escape route
+The correct answer is B.
+236
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) It tells you where the canteen is located
+B) It tells you which direction to walk
+C) It tells you where to assemble in case of an
+emergency
+D) It tells you where the site induction room is
+located
+The correct answer is C.
+237
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+Green and white signs are:
+A) mandatory signs – meaning you MUST do
+something
+B) prohibition signs – meaning you MUST NOT
+do something
+C) warning signs – alerting you to hazards or
+danger
+D) safe condition signs – giving you information
+The correct answer is D.
+238
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Toilets and shower facilities
+B) Drying area for wet weather clothes
+C) Emergency first-aid shower
+D) Fire sprinklers above
+The correct answer is C.
+239
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Risk of electrocution
+B) Risk of static shock
+C) Live electrical appliance
+D) Risk of lightning
+The correct answer is A.
+240
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Dispose of substance or contents by burning
+B) Warning – substance or contents are
+flammable (can catch fire easily)
+C) Warning – substance or contents could
+explode
+D) Warning – substance or contents are
+harmful
+The correct answer is B.
+241
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Radioactive area
+B) Warning – explosive substance
+C) Flashing lights ahead
+D) Warning – laser beams
+The correct answer is D.
+242
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+Yellow and black signs are:
+A) mandatory signs – meaning you MUST do
+something
+B) prohibition signs – meaning you MUST NOT
+do something
+C) warning signs – alerting you to hazards or
+danger
+D) safe condition signs – giving you information
+The correct answer is C.
+243
+HS&E test download for operatives and specialists
+Safety signs and signals
+Question
+What does this sign mean?
+A) Plant operators are wanted
+B) Industrial vehicles are moving about
+C) Manual handling is not allowed
+D) Storage area
+The correct answer is B.
+244
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+What are the TWO conditions for being able to
+operate plant on site?
+A) You must be trained and competent
+B) You must be authorised
+C) You must be over 21 years old
+D) You must hold a full driving licence
+E) You must hold a UK passport
+The correct answers are A and B.
+245
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+Your supervisor asks you to drive a dumper
+truck. You have never driven one before. What
+should you do?
+A) Ask a trained driver how to operate it
+B) Explain to your supervisor that you are not
+trained and therefore cannot operate it
+C) Watch other dumpers to see how they are
+operated
+D) Get on with it
+The correct answer is B.
+246
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+A lorry is in trouble as it tries to reverse into a
+tight space. You have not been trained as a
+signaller. What should you do?
+A) Stay well out of the way
+B) Help the driver by giving hand signals
+C) Help the driver by jumping up into the cab
+D) Offer to adjust the mirrors on the lorry
+The correct answer is A.
+247
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+What do you need before you can supervise any
+lift using a crane?
+A) Nothing, you make it up as you go along
+B) You must be trained and assessed as
+competent
+C) Written instructions from the crane hire
+company
+D) Nothing, the crane driver will tell you what to
+do
+The correct answer is B.
+248
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+A mobile plant operator can let people ride in or
+on the machine:
+A) if they have a long way to walk
+B) as long as the site speed limit is not
+exceeded
+C) only if it is designed to carry passengers and
+has a designated seat
+D) if the cab door is shut
+The correct answer is C.
+249
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You need to walk past someone using a mobile
+crane. You should:
+A) guess what the crane operator will do next
+and squeeze by
+B) try to catch the attention of the crane
+operator
+C) run to get past the crane quickly
+D) take another route so that you stay clear of
+the crane
+The correct answer is D.
+250
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+When you walk across the site, what is the best
+way to avoid an accident with mobile plant?
+A) Keep to the designated pedestrian routes
+B) Ride on the plant
+C) Get the attention of the driver before you get
+too close
+D) Wear hi-vis clothing
+The correct answer is A.
+251
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You need to walk past a 360° mobile crane. The
+crane is operating near a wall. What is the main
+danger?
+A) The crane could crash into the wall
+B) You could be crushed if you walk between
+the crane and the wall
+C) Whole body vibration from the crane
+D) High noise levels from the crane
+The correct answer is B.
+252
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You are walking across the site. A large mobile
+crane reverses across your path. What should
+you do?
+A) Help the driver to reverse
+B) Start to run so that you can pass behind the
+reversing crane
+C) Pass close to the front of the crane
+D) Wait or find another way around the crane
+The correct answer is D.
+253
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+When is site transport allowed to drive along a
+pedestrian route?
+A) During meal breaks
+B) If it is the shortest route
+C) Only if necessary and if all pedestrians are
+excluded
+D) Only if the vehicle has a flashing yellow light
+The correct answer is C.
+254
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+Which of these would you NOT expect to see if
+site transport is well organised?
+A) Speed limits
+B) Barriers to keep pedestrians away from
+mobile plant and vehicles
+C) Pedestrians and mobile plant using the
+same routes
+D) One-way systems
+The correct answer is C.
+255
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+How would you expect a well-organised site to
+keep pedestrians away from traffic routes?
+A) The site manager will direct all pedestrians
+away from traffic routes
+B) The traffic routes will be shown on the
+Health and Safety Law poster
+C) There will be barriers between traffic and
+pedestrian routes
+D) There is no need to keep traffic and
+pedestrians apart
+The correct answer is C.
+256
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+A site vehicle is most likely to injure pedestrians
+when it is:
+A) reversing
+B) lifting materials onto scaffolds
+C) tipping into an excavation
+D) digging out footings
+The correct answer is A.
+257
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You must not walk behind a lorry when it is
+reversing because:
+A) most lorries are not fitted with mirrors
+B) the driver is unlikely to know you are there
+C) most lorry drivers aren't very good at
+reversing
+D) you will need to run, not walk, to get past it in
+time
+The correct answer is B.
+258
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+The quickest way to your work area is through a
+contractor’s vehicle compound. Which way
+should you go?
+A) Around the compound if vehicles are moving
+B) Straight through the compound if no vehicles
+appear to be moving
+C) Around the compound every time
+D) Straight through the compound if no-one is
+looking
+The correct answer is C.
+259
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+A fork-lift truck is blocking the way to where you
+want to go on site. It is lifting materials onto a
+scaffold. What should you do?
+A) Only walk under the raised load if you are
+wearing a safety helmet
+B) Catch the driver's attention and then walk
+under the raised load
+C) Start to run so that you are not under the
+load for very long
+D) Wait or go around, but never walk under a
+raised load
+The correct answer is D.
+260
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You think some mobile plant is operating too
+close to where you have to work. What should
+you do first?
+A) Stop work and speak to the plant operator
+B) Stop work and speak to the plant operator’s
+supervisor
+C) Keep a good lookout for the plant and carry
+on working
+D) Stop work and speak to your own supervisor
+The correct answer is D.
+261
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+If you see a dumper being driven too fast you
+should:
+A) keep out of its way and report the matter
+B) try to catch the dumper and speak to the
+driver
+C) report the matter to the police
+D) do nothing, dumpers are allowed to go
+above the site speed limit
+The correct answer is A.
+262
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You see a lorry parking. It has a flat tyre. Why
+should you tell the driver?
+A) The lorry will use more fuel
+B) The lorry will need to travel at a much slower
+speed
+C) The lorry could be unsafe to drive
+D) The lorry can only carry small loads
+The correct answer is C.
+263
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+An excavator has just stopped work. Liquid is
+dripping and forming a small pool under the
+back of the machine. What could this mean?
+A) It is normal for fluids to vent after the
+machine stops
+B) The machine is hot so the diesel has
+expanded and overflowed
+C) Someone put too much diesel into the
+machine before it started work
+D) The machine has a leak and could be unsafe
+The correct answer is D.
+264
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You see a mobile crane lifting a load. The load is
+about to hit something. What should you do?
+A) Go and tell your supervisor
+B) Try and warn the person supervising or
+banking the lift
+C) Go and tell the crane driver
+D) Do nothing and assume everything is under
+control
+The correct answer is B.
+265
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You see a driver refuelling an excavator. Most of
+the diesel is spilling onto the ground. What is the
+first thing you should do?
+A) Tell your supervisor the next time you see
+them
+B) Tell the driver immediately
+C) Look for a spillage kit immediately
+D) Do nothing, the diesel will eventually seep
+into the ground
+The correct answer is B.
+266
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+You think a load is about to fall from a moving
+fork-lift truck. What should you do?
+A) Keep clear but try to warn the driver and
+others in the area
+B) Run alongside the machine and try to hold
+on to the load
+C) Run and tell your supervisor
+D) Sound the nearest fire alarm bell
+The correct answer is A.
+267
+HS&E test download for operatives and specialists
+Site transport safety
+Question
+How would you expect to be told about the site
+traffic rules?
+A) During site induction
+B) By a Health and Safety Executive (HSE)
+inspector
+C) By a note on a notice board
+D) In a letter sent to your home
+The correct answer is A.
+268
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A fire assembly point is the place where:
+A) fire engines must go when they arrive on site
+B) the fire extinguishers are kept
+C) people must go when the fire alarm sounds
+D) the fire started
+The correct answer is C.
+269
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+If you discover a fire, the first thing you should
+do is:
+A) put your tools away
+B) finish what you are doing, if it is safe to do so
+C) try to put out the fire
+D) raise the alarm
+The correct answer is D.
+270
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+If you hear the fire alarm, you should go to the:
+A) site canteen
+B) assembly point
+C) site office
+D) fire
+The correct answer is B.
+271
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A large fire has been reported. You have not
+been trained to use fire extinguishers. You
+should:
+A) put away all your tools and then go to the
+assembly point
+B) report to the site office and then go home
+C) go straight to the assembly point
+D) leave work for the day
+The correct answer is C.
+272
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+What does a hot work permit NOT tell you?
+A) When you can start and when you must stop
+the hot work
+B) How you must prevent sparks or heat
+travelling
+C) Where the local fire station is located
+D) What fire extinguisher or fire watch you need
+The correct answer is C.
+273
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A hot work permit allows you to:
+A) work in hot weather
+B) carry out work that needs warm, protective
+clothing
+C) carry out work that could start a fire
+D) light a bonfire
+The correct answer is C.
+274
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+If your job needs a hot work permit, what TWO
+things would you expect to have to do?
+A) Have a fire extinguisher close to the work
+B) Check for signs of fire when you stop work
+C) Know where all the fire extinguishers are
+kept on site
+D) Write a site evacuation plan
+E) Know how to refill fire extinguishers
+The correct answers are A and B.
+275
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+Look at these jobs. Which TWO are likely to
+need a hot work permit?
+A) Cutting steel with an angle grinder
+B) Soldering pipework in a central heating
+system
+C) Refuelling a diesel dump truck
+D) Replacing an empty liquefied petroleum gas
+cylinder with a full one
+E) Using the heaters in the drying room
+The correct answers are A and B.
+276
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A fire needs heat, fuel and:
+A) oxygen
+B) carbon dioxide
+C) argon
+D) nitrogen
+The correct answer is A.
+277
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+When you use a carbon dioxide (CO2) fire
+extinguisher, the nozzle gets:
+A) very cold
+B) very hot
+C) warm
+D) very heavy
+The correct answer is A.
+278
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+Which TWO extinguishers should NOT be used
+on electrical fires?
+A) Dry powder (Blue colour band)
+B) Foam (Cream colour band)
+C) Water (Red colour band)
+D) Carbon dioxide (Black colour band)
+The correct answers are B and C.
+279
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A WATER fire extinguisher,
+identified by a red band,
+should ONLY be used on
+what type of fire?
+A) Wood, paper, textile and solid material fires
+B) Flammable liquids (fuel, oil, varnish, paints,
+etc.)
+C) Electrical fires
+D) Metal and molten metal
+The correct answer is A.
+280
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A DRY POWDER fire
+extinguisher, identified by a
+blue band, could be used on
+all types of fire but is BEST
+suited to what TWO types of
+fire?
+A) Wood, paper, textile and solid material fires
+B) Flammable liquids (fuel, oil, varnish, paints,
+etc.)
+C) Flammable gas (LPG, propane, etc.)
+D) Metal and molten metal
+E) Electrical fires
+The correct answers are B and C.
+281
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A FOAM extinguisher,
+identified by a cream band,
+should NOT be used on what
+TWO types of fire?
+A) Wood, paper, textile and solid material fires
+B) Flammable liquids (fuel, oil, varnish, paints,
+etc.)
+C) Electrical fires
+D) Metal and molten metal
+E) Flammable gas (LPG, propane, etc.)
+The correct answers are C and D.
+282
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+A CARBON DIOXIDE (CO2)
+extinguisher, identified by a
+black band, should NOT be
+used on what type of fire?
+A) Wood, paper, textile and solid material fires
+B) Flammable liquids (fuel, oil, varnish, paints,
+etc.)
+C) Electrical fires
+D) Metal and molten metal
+The correct answer is D.
+283
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+If you see 'frost' around the valve on a liquefied
+petroleum gas (LPG) cylinder, it means:
+A) the cylinder is nearly empty
+B) the cylinder is full
+C) the valve is leaking
+D) you must lay the cylinder on its side
+The correct answer is C.
+284
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+If there is a fire you will need to go to the site
+assembly point. How would you expect to find
+out where this is?
+A) During a visit by the Health and Safety
+Executive (HSE)
+B) During site induction
+C) By reading your employer's health and
+safety policy
+D) Your colleagues will tell you
+The correct answer is B.
+285
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+What is the MAIN aim of fire precautions on
+site?
+A) To have measures in place to fight a fire
+B) For the emergency services to reach a fire
+as quickly as possible
+C) To ensure everyone reaches safety in the
+event of a fire
+D) To prevent a fire spreading
+The correct answer is C.
+286
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+How can you help PREVENT a fire hazard?
+A) Store solvents and paints in the drying room
+B) Leave your clothes over a heater all night
+C) Keep your work area tidy and place waste in
+the bins provided
+D) Store materials and equipment along the exit
+routes
+The correct answer is C.
+287
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+You need to work in a corridor that is a fire
+escape route. You must see that:
+A) your tools and equipment do not block the
+route
+B) all doors into the corridor are locked
+C) you only use spark-proof tools
+D) you remove all fire escape signs before you
+start
+The correct answer is A.
+288
+HS&E test download for operatives and specialists
+Fire prevention and control
+Question
+What are TWO common fire risks on
+construction sites?
+A) 230 volt power tools
+B) Poor housekeeping and build up of waste
+C) Timber racks
+D) Uncontrolled hot works
+E) 110 volt extension reels
+The correct answers are B and D.
+289
+HS&E test download for operatives and specialists
+Manual handling
+Question
+To lift a load safely you need to think about:
+A) its size and shape
+B) its weight
+C) how to grip or hold it firmly
+D) all of these answers
+The correct answer is D.
+290
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You are using a trolley to move a heavy load a
+long distance and a wheel comes off. What
+should you do?
+A) Carry the load the rest of the way
+B) Ask someone to help you pull the trolley the
+rest of the way
+C) Drag the trolley on your own the rest of the
+way
+D) Find another way to move the load
+The correct answer is D.
+291
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You have to move a load that might be too
+heavy for you. You cannot divide it into smaller
+parts and there is no-one to help you. What
+should you do?
+A) Do not move the load until you have found a
+safe method
+B) Get a fork-lift truck, even though you can’t
+drive one
+C) Try to lift it using the correct lifting methods
+D) Lift and move the load quickly to avoid injury
+The correct answer is A.
+292
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You need to move a load that might be too
+heavy for you. What should you do?
+A) Divide the load into smaller loads if possible
+B) Get someone to help you
+C) Use an aid, such as a trolley or wheelbarrow
+D) All of these answers
+The correct answer is D.
+293
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You have to lift a heavy load. What must your
+employer do?
+A) Make sure your supervisor is there to advise
+while you lift
+B) Do a risk assessment of the task
+C) Nothing, it is part of your job to lift loads
+D) Watch you while you lift the load
+The correct answer is B.
+294
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You need to lift a load that is not heavy, but it is
+so big that you cannot see in front of you. What
+should you do?
+A) Ask someone to help carry the load so that
+you can both see ahead
+B) Get someone to walk next to you and give
+directions
+C) Get someone to walk in front of you and tell
+others to get out of the way
+D) Move the load on your own because it is so
+large that anyone in your way is sure to see
+it
+The correct answer is A.
+295
+HS&E test download for operatives and specialists
+Manual handling
+Question
+Who should be involved in creating the safe
+system of work for your manual handling?
+A) You
+B) Your supervisor/employer
+C) You and your supervisor/employer
+D) The Health and Safety Executive (HSE)
+The correct answer is C.
+296
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You have to carry a load down a steep slope.
+What should you do?
+A) Walk backwards down the slope to improve
+your balance
+B) Carry the load on your shoulder
+C) Assess whether you can still carry the load
+safely
+D) Run down the slope to finish quickly
+The correct answer is C.
+297
+HS&E test download for operatives and specialists
+Manual handling
+Question
+Under the regulations for manual handling, all
+workers must:
+A) wear back-support belts when lifting
+anything
+B) make a list of all the heavy things they have
+to carry
+C) lift any size of load once the risk assessment
+has been done
+D) follow their employer’s safe systems of work
+The correct answer is D.
+298
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You are using a wheelbarrow to move a heavy
+load. Is this manual handling?
+A) No, because the wheelbarrow is carrying the
+load
+B) Only if the load slips off the wheelbarrow
+C) Yes, you are still manually handling the load
+D) Only if the wheelbarrow has a flat tyre
+The correct answer is C.
+299
+HS&E test download for operatives and specialists
+Manual handling
+Question
+Which part of your body is most likely to be
+injured if you lift heavy loads?
+A) Your knees
+B) Your back
+C) Your shoulders
+D) Your elbows
+The correct answer is B.
+300
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You have been told how to lift a heavy load, but
+you think there is a better way to do it. What
+should you do?
+A) Ignore what you have been told and do it
+your way
+B) Ask your workmates to decide which way
+you should do it
+C) Discuss your idea with your supervisor
+D) Forget your idea and do it the way you have
+been told
+The correct answer is C.
+301
+HS&E test download for operatives and specialists
+Manual handling
+Question
+Your new job involves some manual handling.
+An old injury means that you have a weak back.
+What should you do?
+A) Tell your supervisor you can lift anything
+B) Tell your supervisor that lifting might be a
+problem
+C) Try some lifting then tell your supervisor
+about your back
+D) Tell your supervisor about your back if it gets
+injured again
+The correct answer is B.
+302
+HS&E test download for operatives and specialists
+Manual handling
+Question
+Before you lift a heavy load you should always
+try to:
+A) stand with your feet together when lifting
+B) bend your back when lifting
+C) carry the load away from your body, at arm's
+length
+D) divide large loads into smaller loads or use
+lifting equipment
+The correct answer is D.
+303
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You need to lift a load from the floor. You should
+stand with your:
+A) feet together, legs straight, back bent
+B) feet together, knees bent, in a deep
+squatting position
+C) feet slightly apart, one leg slightly forward,
+knees bent
+D) feet wide apart, legs straight, back bent
+The correct answer is C.
+304
+HS&E test download for operatives and specialists
+Manual handling
+Question
+If you have to twist or turn your body when you
+lift and place a load, it means:
+A) the weight you can lift safely is LESS than
+usual
+B) the weight you can lift safely is MORE than
+usual
+C) nothing, you can lift the SAME weight as
+usual
+D) you MUST wear a back brace
+The correct answer is A.
+305
+HS&E test download for operatives and specialists
+Manual handling
+Question
+If you wear a back support belt when lifting:
+A) you can lift any load without being injured
+B) you can safely lift more than usual
+C) you could face the same risk of injury as
+when you are not wearing one
+D) it will crush your backbone and damage it
+The correct answer is C.
+306
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You need to move a load that is heavier on one
+side than the other. How should you pick it up?
+A) With the heavy side towards you
+B) With the heavy side away from you
+C) With the heavy side on your strong arm
+D) With the heavy side on your weak arm
+The correct answer is A.
+307
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You have to move a load while you are sitting,
+not standing. How much can you lift safely?
+A) Less than usual
+B) The usual amount
+C) Twice the usual amount
+D) Three times the usual amount
+The correct answer is A.
+308
+HS&E test download for operatives and specialists
+Manual handling
+Question
+You need to reach above your head and lower a
+load to the floor. Which of these is NOT true?
+A) It will be more difficult to keep your back
+straight and chin tucked in
+B) You will put extra stress on your arms and
+your back
+C) You can safely handle more weight than
+usual
+D) The load will be more difficult to control
+The correct answer is C.
+309
+HS&E test download for operatives and specialists
+Working at height
+Question
+Which type of accident kills most construction
+workers?
+A) Falling from height
+B) Contact with electricity
+C) Being run over by site transport
+D) Being hit by a falling object
+The correct answer is A.
+310
+HS&E test download for operatives and specialists
+Working at height
+Question
+If you store materials on a working platform,
+which statement is correct?
+A) Materials can be stored unsecured above
+the guard-rail height
+B) Materials must be stored so they can't fall
+and the platform must be able to take their
+weight
+C) Materials can be stored anywhere, even if
+they pose a trip hazard or block the walkway
+D) Materials do not need to be secured if they
+are going to be there for less than an hour
+The correct answer is B.
+311
+HS&E test download for operatives and specialists
+Working at height
+Question
+Working at height is:
+A) 1.2 m above the ground or higher
+B) 2 m above the ground or higher
+C) any height that would cause an injury if you
+fell
+D) 3 m above the ground or higher
+The correct answer is C.
+312
+HS&E test download for operatives and specialists
+Working at height
+Question
+Which of the following is NOT true when using
+podium steps?
+A) The 'wheels' must be locked before you get
+on to them
+B) Podiums can easily topple if you over reach
+sideways
+C) Podiums are safe and can't topple over
+D) Podiums are work equipment and must be
+inspected every seven days
+The correct answer is C.
+313
+HS&E test download for operatives and specialists
+Working at height
+Question
+A ladder should not be painted because:
+A) the paint will make it slippery to use
+B) the paint may hide any damaged parts
+C) the paint could damage the metal parts of
+the ladder
+D) it will need regular re-painting
+The correct answer is B.
+314
+HS&E test download for operatives and specialists
+Working at height
+Question
+How many people should be on a ladder at the
+same time?
+A) One
+B) Two
+C) One on each section of an extension ladder
+D) Three, if it is long enough
+The correct answer is A.
+315
+HS&E test download for operatives and specialists
+Working at height
+Question
+You find a ladder that is damaged. What should
+you do?
+A) Don't use it and make sure that others know
+about the damage
+B) Don't use it and report the damage at the
+end of your shift
+C) Try and mend the damage
+D) Use the ladder if you can avoid the damaged
+part
+The correct answer is A.
+316
+HS&E test download for operatives and specialists
+Working at height
+Question
+When using a ladder what should the slope or
+angle of the ladder be?
+A) 45°
+B) 60°
+C) 75°
+D) 85°
+The correct answer is C.
+317
+HS&E test download for operatives and specialists
+Working at height
+Question
+Who should check a ladder before it is used?
+A) The person who is going to use it
+B) A supervisor
+C) The site safety officer
+D) The manufacturer
+The correct answer is A.
+318
+HS&E test download for operatives and specialists
+Working at height
+Question
+What is the best way to make sure that a ladder
+is secure and won't slip?
+A) Tie it at the top
+B) Ask someone to stand with their foot on the
+bottom rung
+C) Tie it at the bottom
+D) Wedge the bottom of the ladder with blocks
+of wood
+The correct answer is A.
+319
+HS&E test download for operatives and specialists
+Working at height
+Question
+When could you use a ladder as a place of
+work?
+A) If it is long enough
+B) If you can find a ladder to use
+C) If other people do not need to use it for
+access
+D) If you are doing light work for a short time
+The correct answer is D.
+320
+HS&E test download for operatives and specialists
+Working at height
+Question
+When you climb a ladder you must:
+A) have three points of contact with the ladder
+at all times
+B) have two points of contact with the ladder at
+all times
+C) use a safety harness
+D) have two people on the ladder at all times
+The correct answer is A.
+321
+HS&E test download for operatives and specialists
+Working at height
+Question
+You need to use a ladder to get to a scaffold
+platform. Which of these statements is true?
+A) It must be tied and extend five rungs above
+the platform
+B) All broken rungs must be clearly marked
+C) It must be wedged at the bottom to stop it
+slipping
+D) Two people must be on the ladder at all
+times
+The correct answer is A.
+322
+HS&E test download for operatives and specialists
+Working at height
+Question
+You need to use a mobile tower scaffold. The
+wheel brakes do not work. What should you do?
+A) Use some wood to wedge the wheels and
+stop them moving
+B) Do not use the tower
+C) Only use the tower if the floor is level
+D) Get someone to hold the tower while you
+use it
+The correct answer is B.
+323
+HS&E test download for operatives and specialists
+Working at height
+Question
+You need to reach the working platform of a
+mobile tower scaffold. What is the right way to
+do this?
+A) Climb up the tower frame on the outside of
+the tower
+B) Lean a ladder against the tower and climb
+up that
+C) Climb up the ladder built into the tower
+D) Climb up the outside of the diagonal bracing
+The correct answer is C.
+324
+HS&E test download for operatives and specialists
+Working at height
+Question
+A mobile tower scaffold must NOT be used on:
+A) soft or uneven ground
+B) a paved patio
+C) an asphalt road
+D) a smooth concrete path
+The correct answer is A.
+325
+HS&E test download for operatives and specialists
+Working at height
+Question
+When working in a mobile elevating work
+platform (MEWP) where should you attach your
+harnesses lanyard?
+A) To the control box
+B) To a point on the structure or building you
+are working on
+C) To the MEWP handrail
+D) To the designated anchor point within the
+platform or basket
+The correct answer is D.
+326
+HS&E test download for operatives and specialists
+Working at height
+Question
+If you have to work at height over or near to
+deep water, which following item of personal
+protective equipment (PPE) must you be
+wearing?
+A) Wellington boots
+B) Life jacket
+C) Full face respirator
+D) Full body harness
+The correct answer is B.
+327
+HS&E test download for operatives and specialists
+Working at height
+Question
+It is safe to cross a fragile roof if you:
+A) walk along the line of bolts
+B) can see fragile roof signs
+C) don't walk on any plastic panels
+D) use crawling boards with handrails
+The correct answer is D.
+328
+HS&E test download for operatives and specialists
+Working at height
+Question
+You are working on a flat roof. What is the best
+way to stop yourself falling over the edge?
+A) Put a large warning sign at the edge of the
+roof
+B) Ask someone to watch you and shout when
+you get too close to the edge
+C) Protect the edge with a guard-rail and
+toe-board
+D) Use red and white tape to mark the edge
+The correct answer is C.
+329
+HS&E test download for operatives and specialists
+Working at height
+Question
+What is the best way to stop people falling
+through voids, holes or fragile roof panels?
+A) Tell everyone where the dangerous areas
+are
+B) Secure in place covers that can take the
+weight of a person and add warning signage
+C) Cover them with netting
+D) Mark the areas with red and white tape
+The correct answer is B.
+330
+HS&E test download for operatives and specialists
+Working at height
+Question
+What does this sign mean?
+A) Load-bearing roof. OK to stand on surface
+but not any rooflights
+B) Fragile roof. Take care when walking on roof
+surface
+C) Fragile roof. Do not stand directly on roof but
+use fall protection measures
+D) Load-bearing roof. Surface can be slippery
+when wet
+The correct answer is C.
+331
+HS&E test download for operatives and specialists
+Working at height
+Question
+Who should erect, dismantle or alter a tube and
+fitting scaffold?
+A) Anyone who thinks they can do it
+B) Anyone who has the right tools
+C) Anyone who is trained, competent and
+authorised
+D) Anyone who is a project manager
+The correct answer is C.
+332
+HS&E test download for operatives and specialists
+Working at height
+Question
+You need to stack materials on a working
+platform. What is the best way to stop them
+falling over the toe-board?
+A) Fit brick guards or netting to the edge
+B) Put a warning sign on the stack
+C) Build the stack so that it leans away from the
+edge
+D) Cover the stack with polythene
+The correct answer is A.
+333
+HS&E test download for operatives and specialists
+Working at height
+Question
+A scaffold guard-rail must be removed to allow
+you to carry out a survey. You are not a
+scaffolder. Can you remove the guard-rail?
+A) Yes, if you put it back as soon as you have
+finished
+B) Yes, if you put it back before you leave site
+C) No, only a scaffolder can remove the
+guard-rail but you can put it back
+D) No, only a scaffolder can remove the
+guard-rail and put it back
+The correct answer is D.
+334
+HS&E test download for operatives and specialists
+Working at height
+Question
+Tools and materials can easily fall from a
+scaffold platform. What is the best way to
+protect the people below?
+A) Make sure they are wearing safety helmets
+B) Tell them you will be working above them
+C) Use brick guards to stop any items falling
+below
+D) Tell the people below to stop work and clear
+the area
+The correct answer is C.
+335
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+What is the safest way to get into a deep
+excavation?
+A) Climb down a secured ladder
+B) Use the buried services as steps
+C) Climb down the shoring
+D) Go down in an excavator bucket
+The correct answer is A.
+336
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are in a deep trench. A lorry backs up to the
+trench and the engine is left running. What
+should you do?
+A) Put on ear defenders to cut out the engine
+noise
+B) Ignore the problem, the lorry will soon drive
+away
+C) See if there is a toxic gas meter in the trench
+D) Get out of the trench quickly
+The correct answer is D.
+337
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are in a deep trench and start to feel dizzy.
+What should you do?
+A) Get out, let your head clear and then go
+back in again
+B) Carry on working and hope that the feeling
+will go away
+C) Make sure that you and any others get out
+quickly and report it
+D) Sit down in the trench and take a rest
+The correct answer is C.
+338
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Before work starts in a confined space, how
+should the air be checked?
+A) Someone should go in and sniff the air
+B) The air should be tested with a meter
+C) Someone should look around to see if there
+is toxic gas
+D) The air should be tested with a match to see
+if it stays alight
+The correct answer is B.
+339
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+If there is sludge at the bottom of a confined
+space, you should:
+A) go in and then step into the sludge to see
+how deep it is
+B) throw something into the sludge to see how
+deep it is
+C) put on a disposable facemask before you go
+in
+D) have the correct respiratory protective
+equipment (RPE) and training before you go
+in
+The correct answer is D.
+340
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Why is methane gas dangerous in confined
+spaces? Give TWO answers.
+A) It can explode
+B) It makes you hyperactive
+C) You will not be able to see because of the
+dense fumes
+D) It makes you dehydrated
+E) You may not have enough oxygen to breathe
+The correct answers are A and E.
+341
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are in a confined space. If the level of
+oxygen drops:
+A) your hearing could be affected
+B) there is a high risk of fire or explosion
+C) you could become unconscious
+D) you might get dehydrated
+The correct answer is C.
+342
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are working in a confined space when you
+notice the smell of bad eggs. This smell is a sign
+of:
+A) hydrogen sulphide
+B) oxygen
+C) methane
+D) carbon dioxide
+The correct answer is A.
+343
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You need to walk through sludge at the bottom
+of a confined space. Which of these is NOT a
+hazard?
+A) The release of oxygen
+B) The release of toxic gases
+C) Slips and trips
+D) The release of flammable gases
+The correct answer is A.
+344
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+What is the main reason for having a person
+positioned immediately outside a confined
+space whilst work is taking place inside it?
+A) To supervise the work taking place inside the
+confined space
+B) To check compliance with the method
+statement
+C) To get the rescue plan underway in an
+emergency
+D) To carry out a risk assessment for the work
+The correct answer is C.
+345
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are in a confined space when the gas alarm
+sounds. You have no respiratory protective
+equipment (RPE). What should you do?
+A) Switch off the alarm
+B) Get out of the confined space quickly
+C) Carry on working but do not use electrical
+tools
+D) Carry on working but take plenty of breaks in
+the fresh air
+The correct answer is B.
+346
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+An excavation must be supported if:
+A) it is more than 5 m deep
+B) it is more than 1.2 m deep
+C) there is a risk of the sides falling in
+D) any buried services cross the excavation
+The correct answer is C.
+347
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are working in an excavation. If you see the
+side supports move, you should:
+A) keep watching to see if they move again
+B) make sure that you and others get out
+quickly
+C) do nothing as the sides move all the time
+D) work in another part of the excavation
+The correct answer is B.
+348
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Guard-rails are placed around the top of an
+excavation to prevent:
+A) toxic gases from collecting in the bottom of
+the trench
+B) anyone falling into the trench and being
+injured
+C) the sides of the trench from collapsing
+D) rain water running off the ground at the top
+and into the trench
+The correct answer is B.
+349
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+What must happen each time a shift starts work
+in an excavation?
+A) Someone must go in and sniff the air to see
+if it is safe
+B) A competent person must inspect the
+excavation
+C) A supervisor should stay in the excavation
+for the first hour
+D) A supervisor should watch from the top for
+the first hour
+The correct answer is B.
+350
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Work in a confined space usually needs three
+safety documents – a risk assessment, a
+method statement and:
+A) a permit to work/enter
+B) an up-to-date staff handbook
+C) a written contract for the work
+D) a company health and safety policy
+The correct answer is A.
+351
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Why is it important that people are trained
+before they are allowed to go into a confined
+space?
+A) Confined spaces never contain breathable
+air
+B) The conditions inside a confined space may
+be harmful to health
+C) Confined spaces are only found on
+house-building sites
+D) Confined spaces always contain flammable
+or explosive gases
+The correct answer is B.
+352
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You have to work in a confined space. There is
+no rescue team or rescue plan. What should
+you do?
+A) Assume that a rescue team or plan is not
+necessary and do the job
+B) Get someone to stand at the opening with a
+rope
+C) Do not enter until a rescue plan and team
+are in place
+D) Carry out the job in short spells
+The correct answer is C.
+353
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+You are working in a confined space. If the
+permit to work runs out before you can finish the
+job, you should:
+A) carry on working until the job is finished
+B) hand the permit over to the next shift
+C) ask your supervisor to change the date on
+the permit
+D) leave the confined space before the permit
+runs out
+The correct answer is D.
+354
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+When digging, you notice the soil gives off a
+strange smell. What is this likely to mean?
+A) The soil contains a lot of clay
+B) The soil has been excavated before
+C) The ground has been used to grow crops in
+the past
+D) The ground could be contaminated
+The correct answer is D.
+355
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+The main cause of death when people have to
+work in a confined space is:
+A) the presence of methane gas
+B) inadequate emergency rescue plan and
+equipment in place
+C) the disturbance of sludge
+D) too much oxygen
+The correct answer is B.
+356
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+When digging, you hit and damage a buried
+cable. What should you do?
+A) Move the cable out of the way and carry on
+digging
+B) Wait 10 seconds and then move the cable
+out of the way
+C) Do not touch the cable, stop work and report
+it
+D) Dig round the cable or dig somewhere else
+The correct answer is C.
+357
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+When digging you find a run of yellow plastic
+marker tape. What does it mean?
+A) There are buried human remains and you
+must tell your supervisor
+B) There is a buried service and further
+excavation must be carried out with care
+C) The soil is contaminated and you must wear
+respiratory protective equipment (RPE)
+D) The excavation now needs side supports
+The correct answer is B.
+358
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+Which of these is the most accurate way to
+locate buried services?
+A) Cable plans
+B) Trial holes
+C) Survey drawings
+D) Architect drawings
+The correct answer is B.
+359
+HS&E test download for operatives and specialists
+Excavations and confined spaces
+Question
+If you need to dig near underground services,
+you should only be using:
+A) a jack hammer
+B) an insulated spade or shovel
+C) a pick and fork
+D) an excavator
+The correct answer is B.
+360
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+If you find bats on site, which of the following
+statements is true?
+A) Bats are NOT a protected species so you
+can disturb or destroy their shelters or
+resting places
+B) You can move the bats as long as you do it
+at night when they are out foraging
+C) You can disturb or destroy shelters or resting
+places of bats if they get in the way of
+building work
+D) Bats are a protected species so you cannot
+disturb or destroy their shelters or resting
+places
+The correct answer is D.
+361
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+You discover a bird on a nest where you need to
+work. What should you do?
+A) Cover it with a bucket
+B) Move it, do your work and then put it back
+C) Make others aware of its presence whilst
+you go and inform your supervisor
+D) Scare it away
+The correct answer is C.
+362
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+You are on site and you need to throw away
+some waste liquid that has oil in it. What should
+you do?
+A) Pour it down a drain outside the site
+B) Pour it onto the ground and let it soak away
+C) Use it to start a fire
+D) Find out how you should get rid of it from
+your supervisor or environmental advisor
+The correct answer is D.
+363
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+How should you get rid of hazardous waste?
+A) If the waste has a hazardous symbol on it,
+then it can be put in any skip on site
+B) Place it in the correctly labelled container or
+ask your supervisor
+C) Put it only in a mixed waste skip
+D) Take it to the nearest local authority waste
+tip
+The correct answer is B.
+364
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following should be classed as
+hazardous waste?
+A) Broken ceramic tiles or bricks
+B) Polythene and shrink wrap
+C) Glass
+D) Fluorescent light tubes
+The correct answer is D.
+365
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following should be disposed of as
+hazardous waste?
+A) Softwood timber off-cuts
+B) Glass fibre insulation
+C) Part full tins of oil-based paint
+D) Damaged hard hat
+The correct answer is C.
+366
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+You have been asked to clean up oil that has
+leaked from machinery onto the ground. What is
+the right way to do this?
+A) Put the oily soil into the general waste skip
+B) Put the oily soil into a separate container for
+collection as hazardous waste
+C) Mix the soil up with other soil so that the oil
+cannot be seen
+D) Wash the oil away with water and detergent
+The correct answer is B.
+367
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+A member of the public complains that you are
+making too much dust. What TWO things should
+you do?
+A) Tell them you have nearly finished
+B) Inform your supervisor immediately
+C) Ignore them – they are always complaining
+D) Ask your supervisor if there is an alternative
+way of working, such as dampening down
+E) Wait until it's dark and then carry on
+The correct answers are B and D.
+368
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+There has been a spillage of hydraulic oil from
+plant working near a watercourse. What one
+action should you NOT do?
+A) Notify the site manager
+B) Use detergents to clean up the oil
+C) Contain the spillage
+D) Switch the plant off
+The correct answer is B.
+369
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+These signs tell you that a
+substance can be:
+A) harmful
+B) toxic
+C) corrosive
+D) harmful to the environment
+The correct answer is D.
+370
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+What does this sign mean?
+A) The spill kit has been inspected and is OK
+B) Assemble here if there is a spillage
+C) The equipment you need to stop, contain
+and clean up a spill is located here
+D) A spill happened here and has been cleaned
+up
+The correct answer is C.
+371
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+When a product has either of
+these labels, how should you
+dispose of it?
+A) Put it in any skip or bin
+B) Follow specific instructions on the label or in
+work instructions
+C) If it is a liquid and less than one litre you can
+pour it down a drain
+D) Leave it somewhere for other people to deal
+with
+The correct answer is B.
+372
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Who on site needs to understand relevant
+environmental risks on a construction site?
+A) Only the principal contractor
+B) Only the subcontractors
+C) All people working on site
+D) Just the environmental clerk of works
+The correct answer is C.
+373
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Under Environmental Law, which statement is
+true?
+A) Companies AND individuals can be
+prosecuted if they do not follow the law
+B) It is illegal to discharge contaminated water
+into a watercourse
+C) It is illegal to transport waste without a
+licence
+D) All of these answers
+The correct answer is D.
+374
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Do you have any responsibility with regard to
+sustainability on site?
+A) No, it is a matter for the site manager
+B) No, it is a matter for the Environment Agency
+C) Only on sites where there are rare species of
+plants
+D) Yes, on every site that you go on to
+The correct answer is D.
+375
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following is NOT best practice from
+a sustainability perspective?
+A) Saving materials, fuel, water and energy
+B) Looking after the people working on or near
+the site
+C) Protecting the environment
+D) Sending unused and waste materials to
+landfill
+The correct answer is D.
+376
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following does NOT help
+sustainability on site?
+A) Leaving engines, motors and other power on
+when not needed
+B) Segregating waste
+C) Lift sharing or using public transport to get to
+work
+D) Working safely
+The correct answer is A.
+377
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following should you do in the
+interest of sustainability on site?
+A) Run plant and equipment when they are not
+needed
+B) Bury waste materials in the ground
+C) Comply with site instructions on handling
+waste materials
+D) Pour waste liquids down a drain outside the
+site
+The correct answer is C.
+378
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following is NOT part of
+sustainable construction?
+A) Creating a nuisance to the residents of
+neighbouring properties
+B) Preventing water and soil pollution
+C) Saving energy
+D) Minimising the amount of waste created in
+doing a job
+The correct answer is A.
+379
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+From an environmental point of view, we should
+try to re-use materials because it:
+A) saves the client money
+B) takes lots of energy and 'raw' material to
+make most construction products
+C) makes less mess on site
+D) is a European Union Law
+The correct answer is B.
+380
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which TWO actions could help minimise waste?
+A) Re-use off-cuts (such as half bricks) as far
+as possible, rather than discarding them
+B) Use new materials/packs at the beginning of
+each day
+C) Leave bags of cement and plaster out in the
+rain, unprotected
+D) Only take or open what you need and return
+or reseal anything left over
+E) Always take much more than required - just
+in case you need it
+The correct answers are A and D.
+381
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Which of the following is good environmental
+practice?
+A) Over ordering materials
+B) Segregating waste into different types
+C) Leaving skips uncovered in wet weather
+D) Poor storage of materials, causing pollution
+The correct answer is B.
+382
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Do you have any responsibility for minimising
+the amount of waste created?
+A) Only if asbestos removal is being carried out
+B) Yes, everyone on site has a responsibility to
+do this
+C) No, it is the responsibility of the Environment
+Agency
+D) Only during the site clean up at the end of
+the project
+The correct answer is B.
+383
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+If you have unused material left, what should
+you always do before you consider putting it into
+a skip?
+A) Make sure there is a label on it
+B) Tell your supervisor
+C) Check whether someone else can make use
+of it
+D) Make sure there is room in the skip
+The correct answer is C.
+384
+HS&E test download for operatives and specialists
+Environmental awareness and waste control
+Question
+Why should different types of waste be
+separated on site?
+A) They will take up less room in the skip
+B) So the Government can charge us a fair
+amount of Landfill Tax
+C) So the client can check what is being thrown
+away
+D) So it can be recycled more easily
+The correct answer is D.
+385
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is the purpose of the health and safety file
+on a construction project?
+A) To assist people who have to carry out work
+on the structure in the future
+B) To assist in the preparation of final accounts
+for the structure
+C) To record the health and safety standards of
+the structure
+D) To record the accident details
+The correct answer is A.
+386
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Where a project is notifiable under the current
+Construction (Design and Management)
+Regulations, what must be in place before
+construction work begins?
+A) Construction project health and safety file
+B) Construction phase health and safety plan
+C) Construction project plan
+D) Construction contract agreement
+The correct answer is B.
+387
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The current Construction (Design and
+Management) Regulations require a supported
+excavation to be inspected:
+A) every seven days
+B) at the start of every shift
+C) once a month
+D) when it is more than 2 m deep
+The correct answer is B.
+388
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Under the current Construction (Design and
+Management) Regulations, for how long must
+you keep inspection records on site?
+A) For a period of three months
+B) Not at all, the records need only be kept at
+company head offices
+C) Until the project is completed
+D) For a period of one month
+The correct answer is C.
+389
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Under the current Construction (Design and
+Management) Regulations, what document
+must be handed to the client upon completion of
+the construction phase?
+A) The safety log book
+B) The premises log book
+C) The site accident book
+D) The health and safety file
+The correct answer is D.
+390
+HS&E test download for operatives and specialists
+Supervisory
+Question
+If your company is the principal contractor on a
+project that is notifiable under the current
+Construction (Design and Management)
+Regulations, you may come into contact with the
+CDM co-ordinator because of their legal duty to:
+A) collect accident statistics for the Health and
+Safety Executive (HSE)
+B) manage the flow of health and safety
+information between contractors and other
+parties
+C) supervise the principal contractor’s
+implementation of the construction phase
+health and safety plan
+D) supervise or monitor construction work
+The correct answer is B.
+391
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Under the current Construction (Design and
+Management) Regulations, which of the
+following must the principal contractor ensure is
+specifically provided before allowing any
+demolition work to commence?
+A) A construction phase safety plan
+B) The arrangements for demolition recorded in
+writing
+C) A generic risk assessment
+D) A pre-tender health and safety plan
+The correct answer is B.
+392
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Apart from work for domestic clients, under the
+current Construction (Design and Management)
+Regulations, in which of the following situations
+must the Health and Safety Executive (HSE) be
+notified of a project?
+A) Where the work will last more than 30 days
+or more than 500 person-days
+B) Where the building and construction work
+will last more than 300 person-days
+C) When the work will take place outside
+normal hours
+D) Where there is more than one building to be
+erected
+The correct answer is A.
+393
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Under the current Construction (Design and
+Management) Regulations, who must develop
+the pre-construction information into a
+construction phase plan?
+A) CDM co-ordinator
+B) Designer
+C) Client
+D) Principal contractor
+The correct answer is D.
+394
+HS&E test download for operatives and specialists
+Supervisory
+Question
+A COSHH assessment tells you how:
+A) to lift heavy loads and how to protect
+yourself
+B) to work safely in confined spaces
+C) a substance might harm you and how to
+protect yourself when you are using it
+D) noise levels are assessed and how to
+protect your hearing
+The correct answer is C.
+395
+HS&E test download for operatives and specialists
+Supervisory
+Question
+You have to use a new material for the first time
+and need to carry out a COSHH assessment.
+What are the TWO main things you will need?
+A) Your company's safety policy
+B) The material safety data sheet
+C) The age of the people doing the work
+D) The material delivery note
+E) Details of where, who and how you will be
+using the product
+The correct answers are B and E.
+396
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Which piece of equipment is used with a cable
+avoidance tool (CAT) to detect cables?
+A) Compressor
+B) Signal generator
+C) Metal detector
+D) Gas detector
+The correct answer is B.
+397
+HS&E test download for operatives and specialists
+Supervisory
+Question
+In the colour coding of electrical power supplies
+on site, what voltage does a blue plug
+represent?
+A) 50 volts
+B) 110 volts
+C) 240 volts
+D) 415 volts
+The correct answer is C.
+398
+HS&E test download for operatives and specialists
+Supervisory
+Question
+On the site electrical distribution system, which
+colour plug indicates a 415 volt supply?
+A) Yellow
+B) Blue
+C) Black
+D) Red
+The correct answer is D.
+399
+HS&E test download for operatives and specialists
+Supervisory
+Question
+A RCD (residual current device) must be used in
+conjunction with 230 volt electrical equipment
+because it:
+A) lowers the voltage
+B) quickly cuts off the power if there is a fault
+C) makes the tool run at a safe speed
+D) saves energy and lowers costs
+The correct answer is B.
+400
+HS&E test download for operatives and specialists
+Supervisory
+Question
+How could a site worker check if the RCD
+(residual current device) through which a 230
+volt hand tool is connected to the supply is
+working correctly?
+A) Switch the tool on and off
+B) Press the test button on the RCD unit
+C) Switch the power on and off
+D) Run the tool at top speed to see if it cuts out
+The correct answer is B.
+401
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Untidy leads and extension cables are
+responsible for many trips and lost work time
+injuries. What TWO things should you do to
+help?
+A) Run cables and leads above head height
+and over the top of doorways and walkways
+rather than across the floor
+B) Tie any excess cables and leads up into the
+smallest coil possible
+C) Keep cables and leads close to the wall and
+not in the middle of the floor or walkway
+D) Make sure your cables go where you want
+them to and not worry about others
+E) Unplug the nearest safety lighting and use
+these sockets instead
+The correct answers are A and C.
+402
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When overhead electric cables cross a
+construction site, it is recommended that
+goal-post barriers should be erected parallel to
+the overhead cables at a distance not less than:
+A) 3 m
+B) 4 m
+C) 5 m
+D) 6 m
+The correct answer is D.
+403
+HS&E test download for operatives and specialists
+Supervisory
+Question
+An emergency route(s) must be provided on
+construction sites to ensure safe passage to:
+A) the ground
+B) open air
+C) a place of safety
+D) the first-aid room
+The correct answer is C.
+404
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Which of the following is a significant hazard
+when excavating alongside a building or
+structure?
+A) Undermining or weakening the foundations
+of the building
+B) Noise and vibration affecting the occupiers
+of the building
+C) Excavating too deep in soft ground
+D) Damage to the surface finish of the building
+or structure
+The correct answer is A.
+405
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What danger is created by excessive oxygen in
+a confined space?
+A) Increase in breathing rate of workers
+B) Increased flammability of combustible
+materials
+C) Increased working time inside work area
+D) False sense of security
+The correct answer is B.
+406
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When planning possible work in a confined
+space, what should be the first consideration?
+A) How long the job will take
+B) To avoid the need for operatives to enter the
+space
+C) How many operatives will be required
+D) Personal protective equipment (PPE)
+The correct answer is B.
+407
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Before planning for anyone to enter a confined
+space, following the principles of prevention,
+what should be the first consideration of the
+manager or supervisor?
+A) Has the atmosphere in the confined space
+been tested?
+B) Has a safe means of access and egress
+been established?
+C) Is there an alternative method of doing the
+work?
+D) Have all who intend to enter the confined
+space been properly trained?
+The correct answer is C.
+408
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When is it advisable to take precautions to
+prevent the fall of persons, plant or materials
+into an excavation?
+A) At all times
+B) When the excavation is 2 m or more deep
+C) When the excavation is 1.2 m or more deep
+D) When there is a risk from an underground
+cable or other service
+The correct answer is A.
+409
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Which of the following precautions should be
+taken to prevent a dumper from falling into an
+excavation when tipping material into it?
+A) Dumpers kept 5 m away from the excavation
+B) Stop blocks provided parallel to the trench
+appropriate to the vehicle’s wheel size
+C) Dumper drivers required to judge the
+distance carefully or given stop signals by
+another person
+D) Cones or signage erected to indicate safe
+tipping point
+The correct answer is B.
+410
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Which TWO of the following factors must be
+considered when providing first-aid facilities on
+site?
+A) The cost of first-aid equipment
+B) The hazards, risks and nature of the work
+carried out
+C) The number of people expected to be on site
+at any one time
+D) The difficulty in finding time to purchase the
+necessary equipment
+E) The space in the site office to store the
+necessary equipment
+The correct answers are B and C.
+411
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The minimum level of first-aid cover required at
+any workplace is an appointed person. Which of
+the following would you expect the appointed
+person to carry out?
+A) Provide MOST of the care normally carried
+out by a first aider
+B) Provide ALL of the care normally provided by
+a first aider
+C) Contact the emergency services and direct
+them to the scene of an accident
+D) Only apply splints to broken bones
+The correct answer is C.
+412
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The monitoring and controlling of health and
+safety procedures can be either proactive or
+reactive. Proactive monitoring means:
+A) ensuring that staff always do the work that
+they have been instructed to do safely
+B) deciding how to prevent accidents similar to
+those that have already occurred
+C) looking at the work to be done, what could
+go wrong and how it could be done safely
+D) checking that all staff read and understand
+all health and safety notices
+The correct answer is C.
+413
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Why may a young person be more at risk of
+having accidents?
+A) Legislation does not apply to anyone under
+18 years of age
+B) They are usually left to work alone to gain
+experience
+C) They have less experience and may not
+recognise danger or understand fully what
+could go wrong
+D) There is no legal duty to provide them with
+personal protective equipment (PPE)
+The correct answer is C.
+414
+HS&E test download for operatives and specialists
+Supervisory
+Question
+How should cylinders containing liquefied
+petroleum gas (LPG) be stored on site?
+A) In a locked cellar with clear warning signs
+B) In a locked, external compound at least 3 m
+from any oxygen cylinders
+C) Within a secure storage container
+D) Covered by a tarpaulin to shield the
+compressed cylinder from sunlight
+The correct answer is B.
+415
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Where should liquefied petroleum gas (LPG)
+cylinders be positioned when supplying an
+appliance in a site cabin?
+A) Inside the site cabin in a locked cupboard
+B) Under the cabin
+C) Inside the cabin next to the appliance
+D) Outside the cabin
+The correct answer is D.
+416
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Welding is about to start on your site. What
+should be used to protect passers-by from
+getting arc eye?
+A) Warning signs
+B) Screens
+C) Personal protective equipment (PPE)
+D) Nothing
+The correct answer is B.
+417
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When setting up a fuel storage tank on site, a
+spillage bund must have a minimum capacity of
+the contents of the tank, plus:
+A) 10% (110% of the total content)
+B) 30% (130% of the total content)
+C) 50% (150% of the total content)
+D) 75% (175% of the total content)
+The correct answer is A.
+418
+HS&E test download for operatives and specialists
+Supervisory
+Question
+If there is a fatal accident or a reportable
+dangerous occurrence on site, when must the
+Health and Safety Executive (HSE) be
+informed?
+A) Immediately
+B) Within five days
+C) Within seven days
+D) Within 10 days
+The correct answer is A.
+419
+HS&E test download for operatives and specialists
+Supervisory
+Question
+If a prohibition notice is issued by an inspector
+of the Health and Safety Executive (HSE) or
+local authority:
+A) work can continue, provided that a risk
+assessment is carried out
+B) the work that is subject to the notice must
+cease
+C) the work can continue if extra safety
+precautions are taken
+D) the work in hand can be completed, but no
+new works started
+The correct answer is B.
+420
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Who should you inform if someone reports to
+you that they have work-related hand-arm
+vibration syndrome?
+A) The Health and Safety Executive (HSE)
+B) The local health authority
+C) Their doctor
+D) The nearest hospital
+The correct answer is A.
+421
+HS&E test download for operatives and specialists
+Supervisory
+Question
+An employer has to prepare a written health and
+safety policy if:
+A) they employ five people or more
+B) they employ three people or more
+C) they employ a safety officer
+D) the work is going to last more than 30 days
+The correct answer is A.
+422
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The significant findings of risk assessments
+must be recorded when more than a certain
+number of people are employed. How many?
+A) Three or more
+B) Five or more
+C) Six or more
+D) Seven or more
+The correct answer is B.
+423
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Before allowing a lifting operation to be carried
+out, you must ensure that the sequence of
+operations to enable a lift to be carried out
+safely is confirmed in:
+A) the crane hire contract
+B) an approved lifting plan or method statement
+C) a lifting operation tool box talk
+D) a risk assessment
+The correct answer is B.
+424
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What does the term ‘lower exposure action
+value’ mean when referring to noise?
+A) The average background noise level
+B) The noise level at which the worker can
+request hearing protection
+C) The level of noise which must not be
+exceeded on the site boundary which
+causes noise nuisance
+D) The noise level at which the worker must
+wear hearing protection
+The correct answer is B.
+425
+HS&E test download for operatives and specialists
+Supervisory
+Question
+At what decibel (dBA) level does it become
+mandatory for an employer to establish hearing
+protection zones?
+A) 80 dBA
+B) 85 dBA
+C) 90 dBA
+D) 95 dBA
+The correct answer is B.
+426
+HS&E test download for operatives and specialists
+Supervisory
+Question
+At what minimum noise level must you provide
+hearing protection to workers if they ask for it?
+A) 80 decibels
+B) 85 decibels
+C) 87 decibels
+D) 90 decibels
+The correct answer is A.
+427
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The significance of a weekly or daily personal
+noise exposure of 87 decibels (dBA) is that:
+A) it is the lower action value and no action is
+necessary
+B) it is the upper action value and hearing
+protection must be issued
+C) it is the peak sound pressure and all work
+must stop
+D) it is the exposure limit value and must not be
+exceeded
+The correct answer is D.
+428
+HS&E test download for operatives and specialists
+Supervisory
+Question
+In considering what measures to take to protect
+people against risks to their health and safety,
+personal protective equipment (PPE) should
+always be regarded as:
+A) the first line of defence
+B) the only practical measure
+C) the best way to tackle the job
+D) the last resort
+The correct answer is D.
+429
+HS&E test download for operatives and specialists
+Supervisory
+Question
+In deciding what control measures to take,
+following a risk assessment that has revealed a
+risk, what measure should you always consider
+first?
+A) Make sure personal protective equipment
+(PPE) is available
+B) Adapt the work to the individual
+C) Give priority to measures that protect the
+whole workforce
+D) Avoid the risk altogether if possible
+The correct answer is D.
+430
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Why is it important that hazards are identified?
+A) They have the potential to cause injury or
+damage
+B) They must all be eliminated before work can
+start
+C) They must all be notified to the Health and
+Safety Executive (HSE)
+D) So tool box talks can be given on the
+hazards
+The correct answer is A.
+431
+HS&E test download for operatives and specialists
+Supervisory
+Question
+In the context of a risk assessment, what does
+the term 'risk' mean?
+A) Something with the potential to cause injury
+B) An unsafe act or condition
+C) The likelihood or chance that a hazard could
+actually cause harm or damage
+D) Any work activity that can be described as
+dangerous
+The correct answer is C.
+432
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What must a subcontractor provide you with in
+relation to a worker who is 17 years old?
+A) A mentor or 'buddy' to stay with them at all
+times
+B) Health and Safety Executive (HSE)
+permission for the 17-year-old to be on site
+C) The legal guardian's permission for the
+17-year-old to be on site
+D) A risk assessment addressing the issue of
+young persons
+The correct answer is D.
+433
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The number of people who may be carried in a
+passenger hoist on site must be:
+A) displayed on a legible notice in the site
+welfare area
+B) displayed on a legible notice within the cage
+of the hoist
+C) explained in the site induction
+D) explained to the hoist operator
+The correct answer is B.
+434
+HS&E test download for operatives and specialists
+Supervisory
+Question
+From a safety point of view, which of the
+following should be considered first when
+deciding on the number and location of access
+and egress points to a site?
+A) Off road parking for cars and vans
+B) Access for the emergency services
+C) Access for heavy vehicles
+D) Site security
+The correct answer is B.
+435
+HS&E test download for operatives and specialists
+Supervisory
+Question
+How should access be controlled, if people are
+working in a riser shaft?
+A) By a site security operative
+B) By those who are working in it
+C) By the main contractor
+D) By a permit to work system
+The correct answer is D.
+436
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is the purpose of using a ‘permit to work’
+system?
+A) To ensure that the job is being carried out
+properly
+B) To ensure that the job is carried out by the
+easiest method
+C) To enable tools and equipment to be
+properly checked before work starts
+D) To establish a safe system of work
+The correct answer is D.
+437
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Employers must prevent exposure of their
+workers to substances hazardous to health,
+where this is reasonably practicable. If it is not
+reasonably practicable, which of the following
+should be considered first?
+A) What instruction, training and supervision to
+provide
+B) What health surveillance arrangements will
+be needed
+C) How to minimise risk and control exposure
+D) How to monitor the exposure of workers in
+the workplace
+The correct answer is C.
+438
+HS&E test download for operatives and specialists
+Supervisory
+Question
+If a scaffold is not complete, which of the
+following actions should be taken by the site
+manager?
+A) Make sure the scaffolders complete the
+scaffold
+B) Tell all operatives not to use the scaffold
+C) Use the scaffold with care and display a
+warning notice
+D) Prevent access to the scaffold by
+unauthorised people and add warning
+signage and barriers where required
+The correct answer is D.
+439
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Following a scaffold inspection under the Work
+at Height Regulations, how soon must a report
+be given to the person on whose behalf the
+inspection was made?
+A) Within two hours
+B) Within six hours
+C) Within 12 hours
+D) Within 24 hours
+The correct answer is D.
+440
+HS&E test download for operatives and specialists
+Supervisory
+Question
+On a scaffold the minimum height of the main
+guard-rail must be:
+A) 875 mm
+B) 910 mm
+C) 950 mm
+D) 1,000 mm
+The correct answer is C.
+441
+HS&E test download for operatives and specialists
+Supervisory
+Question
+On a scaffold the unprotected gap between any
+guard-rail, toe-board, barrier or other similar
+means of protection should NOT exceed:
+A) 400 mm
+B) 470 mm
+C) 500 mm
+D) 600 mm
+The correct answer is B.
+442
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is the best way for a supervisor or
+manager to make sure that the operatives doing
+a job have fully understood a method
+statement?
+A) Put the method statement in a labelled
+spring-binder in the office
+B) Explain the method statement to those doing
+the job and test their understanding
+C) Make sure that those doing the job have
+read the method statement
+D) Display the method statement on a notice
+board in the office
+The correct answer is B.
+443
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is your LEAST reliable source of
+information when assessing the level of
+vibration from a powered, percussive hand tool?
+A) In-use vibration measurement of the tool
+B) Vibration figures taken from the tool
+manufacturer's handbook
+C) Your own judgement based upon
+observation or experience
+D) Vibration data from the Health and Safety
+Executive's (HSE) master list
+The correct answer is C.
+444
+HS&E test download for operatives and specialists
+Supervisory
+Question
+You will find the details of the welfare facilities
+that must be provided on site in which
+regulations?
+A) The Construction (Health, Safety and
+Welfare) Regulations
+B) The Construction (Design and Management)
+Regulations
+C) The Management of Health and Safety at
+Work Regulations
+D) The Workplace (Health, Safety and Welfare)
+Regulations
+The correct answer is B.
+445
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is regarded as the last resort in the
+hierarchy of control for operatives’ safety when
+working at height?
+A) Safety harness
+B) Mobile elevating work platform (MEWP)
+C) Mobile tower scaffold
+D) Access tower scaffold
+The correct answer is A.
+446
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Which of the following is a fall-arrest system?
+A) Guard-rail and toe-board
+B) Scaffold towers
+C) Mobile elevating work platform (MEWP)
+D) Safety harness and lanyard
+The correct answer is D.
+447
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Under the requirements of the Work at Height
+Regulations, the minimum width of a working
+platform must be:
+A) suitable and sufficient for the job in hand
+B) two scaffold boards wide
+C) three scaffold boards wide
+D) four scaffold boards wide
+The correct answer is A.
+448
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The Work at Height Regulations require a
+working platform to be inspected by a
+competent person:
+A) after an accident
+B) every day
+C) fortnightly
+D) before first use and then every seven days
+afterwards
+The correct answer is D.
+449
+HS&E test download for operatives and specialists
+Supervisory
+Question
+For a ladder, what is the maximum vertical
+height that may be climbed before an
+intermediate landing place is required?
+A) 7.5 m
+B) 8 m
+C) 8.5 m
+D) 9 m
+The correct answer is D.
+450
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The advantage of using safety nets rather than
+harness and lanyard is that:
+A) safety nets do not need inspecting
+B) workers' lanyards can get entangled with
+other workers' lanyards
+C) safety nets provide collective fall protection
+D) safety nets can be rigged by anyone
+The correct answer is C.
+451
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What should you do if you notice that operatives
+working above a safety net are dropping off-cuts
+of material and other debris into the net?
+A) Nothing, as at least it is all collecting in one
+place
+B) Ensure that the net is cleared of debris
+weekly
+C) Have the net cleared and ensure it is not
+allowed to happen again
+D) Ensure that the net is cleared of debris daily
+The correct answer is C.
+452
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What should be included in a safety method
+statement for working at height? Give THREE
+answers.
+A) The cost of the job and time it will take
+B) The sequence of operations and the
+equipment to be used
+C) How much insurance cover will be required
+D) How falls are to be prevented
+E) Who will supervise the job on site
+The correct answers are B, D and E.
+453
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When putting people to work above public
+areas, your first consideration should be to:
+A) minimise the number of people below at any
+one time
+B) prevent complaints from the public
+C) let the public know what you are doing
+D) prevent anything falling on to people below
+The correct answer is D.
+454
+HS&E test download for operatives and specialists
+Supervisory
+Question
+A competent person must routinely inspect a
+working platform:
+A) after it is erected and at intervals not
+exceeding seven days
+B) only after it has been erected
+C) after it is erected and then at monthly
+intervals
+D) after it is erected and then at intervals not
+exceeding 10 days
+The correct answer is A.
+455
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Ideally, a safety net should be rigged:
+A) immediately below where you are working
+B) 2 m below where you are working
+C) 6 m below where you are working
+D) at any height below the working position
+The correct answer is A.
+456
+HS&E test download for operatives and specialists
+Supervisory
+Question
+What is the MAIN danger of leaving someone
+who has fallen suspended in a harness for too
+long?
+A) The anchorage point may fail
+B) They may try to climb back up the structure
+and fall again
+C) They may suffer severe trauma or even
+death
+D) It is a distraction for other workers
+The correct answer is C.
+457
+HS&E test download for operatives and specialists
+Supervisory
+Question
+Edge protection must be designed to:
+A) allow persons to work both sides
+B) secure tools and materials close to the edge
+C) warn people where the edge of the roof is
+D) prevent people and materials falling
+The correct answer is D.
+458
+HS&E test download for operatives and specialists
+Supervisory
+Question
+When should guard-rails be fitted to a working
+platform?
+A) If it is possible to fall 2 m
+B) At any height if a fall could result in an injury
+C) If it is possible to fall 3 m
+D) Only if materials are being stored on the
+working platform
+The correct answer is B.
+459
+HS&E test download for operatives and specialists
+Supervisory
+Question
+The Beaufort Scale is important when working
+at height externally because it measures the:
+A) ratio of sloping ground to height
+B) load-bearing capacity of a flat roof
+C) wind speed
+D) load-bearing capacity of a scaffold
+The correct answer is C.
+460
+HS&E test download for operatives and specialists
+Supervisory
+Question
+A design feature of some airbags used for fall
+arrest is a controlled leak rate. If you are using
+these, the inflation pump must:
+A) be electrically powered
+B) be switched off from time to time to avoid
+over-inflation
+C) run all the time while work is carried out at
+height
+D) be switched off when the airbags are full
+The correct answer is C.
+461`; // <-- Your full question text here
+
+let currentQuestionIndex = 0;
+let userAnswers = [];
+let questions = [];
+
+function parseQuestions(text) {
+    const lines = text.split('\n');
+    let currentQuestion = { question: '', options: [], correctAnswer: '' };
+    let isCollectingQuestion = false;
+
+    for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith('Question')) {
+            if (currentQuestion.question) {
+                questions.push(currentQuestion);
+                currentQuestion = { question: '', options: [], correctAnswer: '' };
+            }
+            currentQuestion.question = line.replace('Question', '').trim();
+            isCollectingQuestion = true;
+        } else if (isCollectingQuestion && /^[A-D]\)/.test(line)) {
+            isCollectingQuestion = false;
+            const optionText = line.replace(/^[A-D]\)\s*/, '').trim();
+            currentQuestion.options.push(optionText);
+        } else if (isCollectingQuestion && line.length > 0) {
+            currentQuestion.question += ' ' + line;
+        } else if (/^[A-D]\)/.test(line)) {
+            const optionText = line.replace(/^[A-D]\)\s*/, '').trim();
+            currentQuestion.options.push(optionText);
+        } else if (line.startsWith('The correct answer is ')) {
+            currentQuestion.correctAnswer = line.replace('The correct answer is ', '').trim().replace('.', '');
+            questions.push(currentQuestion);
+            currentQuestion = { question: '', options: [], correctAnswer: '' };
+        }
+    }
+
+    return questions;
+}
+
+function getRandomQuestions(arr, num) {
+    let shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, num);
+}
+
+function startQuiz(mode) {
+    questions = parseQuestions(xTxtContent);
+    if (mode === 'random') {
+        questions = getRandomQuestions(questions, 5);
+    }
+    currentQuestionIndex = 0;
+    userAnswers = [];
+    document.getElementById('start-menu').style.display = 'none';
+    displayQuestion(currentQuestionIndex);
+}
+
+function displayQuestion(index) {
+    const quizDiv = document.getElementById('quiz');
+    quizDiv.innerHTML = "";
+    const question = questions[index];
+
+    const container = document.createElement('div');
+    container.className = 'question-container';
+
+    const title = document.createElement('div');
+    title.className = 'question-title';
+    title.textContent = `Question ${index + 1}: ${question.question}`;
+    container.appendChild(title);
+
+    const optionsList = document.createElement('ul');
+    optionsList.className = 'options';
+
+    question.options.forEach((option, i) => {
+        const li = document.createElement('li');
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'answer';
+        input.value = String.fromCharCode(65 + i);
+        input.id = `option-${i}`;
+
+        const label = document.createElement('label');
+        label.htmlFor = `option-${i}`;
+        label.textContent = `${String.fromCharCode(65 + i)}) ${option}`;
+
+        li.appendChild(input);
+        li.appendChild(label);
+        optionsList.appendChild(li);
+    });
+
+    container.appendChild(optionsList);
+
+    const button = document.createElement('button');
+    button.className = 'button';
+    button.textContent = 'Check Answer';
+    button.onclick = () => checkAnswer(index, question, button);
+    container.appendChild(button);
+
+    quizDiv.appendChild(container);
+}
+
+function checkAnswer(index, question, button) {
+    const selectedOption = document.querySelector(`input[name="answer"]:checked`);
+    if (!selectedOption) {
+        alert("Please select an answer.");
+        return;
+    }
+
+    const selectedLetter = selectedOption.value;
+    const isCorrect = selectedLetter === question.correctAnswer;
+    const result = document.createElement('div');
+    result.className = isCorrect ? 'correct-answer' : 'incorrect-answer';
+    result.textContent = isCorrect ? "✅ Correct!" : `❌ Incorrect! The correct answer is ${question.correctAnswer}.`;
+    button.style.display = 'none';
+
+    const nextButton = document.createElement('button');
+    nextButton.className = 'button';
+    nextButton.textContent = index < questions.length - 1 ? "Next Question" : "See Results";
+    nextButton.onclick = () => {
+        userAnswers.push({ selected: selectedLetter, correct: question.correctAnswer });
+        if (index < questions.length - 1) {
+            currentQuestionIndex++;
+            displayQuestion(currentQuestionIndex);
+        } else {
+            userAnswers.push({ selected: selectedLetter, correct: question.correctAnswer });
+            showResults();
+        }
+    };
+
+    const container = document.querySelector('.question-container');
+    container.appendChild(result);
+    container.appendChild(nextButton);
+}
+
+function showResults() {
+    const quizDiv = document.getElementById('quiz');
+    quizDiv.innerHTML = `<h2>Quiz Results</h2>`;
+    let score = 0;
+    userAnswers.forEach((ans, i) => {
+        const div = document.createElement('div');
+        if (ans.selected === ans.correct) score++;
+        div.textContent = `Question ${i + 1}: ${ans.selected} ${ans.selected === ans.correct ? '✅ Correct' : '❌ Incorrect (Correct: ' + ans.correct + ')'}`;
+        quizDiv.appendChild(div);
+    });
+
+    const summary = document.createElement('h3');
+    summary.textContent = `You scored ${score}/${userAnswers.length}`;
+    quizDiv.appendChild(summary);
+}
+
+// Start the stopwatch as soon as the page loads
+window.onload = () => {
+    const start = performance.now();
+    elapsed = 0;
+    updateStopwatchDisplay();
+
+    if (stopwatchInterval) clearInterval(stopwatchInterval);
+    stopwatchInterval = setInterval(() => {
+        elapsed = performance.now() - start;
+        updateStopwatchDisplay();
+    }, 10); // 10ms ticks
+};
+
+</script>
+</body>
+</html>
