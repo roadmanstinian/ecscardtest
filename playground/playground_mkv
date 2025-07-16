@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Question Parser – High Contrast</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .quiz {
+      background-color: white;
+      padding: 25px;
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+    .question-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .option-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background-color: #2c3e50;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .option-btn:hover {
+      background-color: #1a252f;
+    }
+    .option-btn.correct {
+      background-color: #27ae60;
+      color: white;
+    }
+    .option-btn.wrong {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    .explanation {
+      margin-top: 10px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-left: 6px solid #3498db;
+      font-style: italic;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Question Parser – High Contrast UI</h1>
+  <textarea id="input" placeholder="Paste your question here..."></textarea>
+  <button onclick="parseAndRender()">Parse &amp; Render</button>
+
+  <div class="quiz" id="quizArea"></div>
+
+  <script>
+    function parseAndRender() {
+      const input = document.getElementById('input').value.trim();
+      const quizArea = document.getElementById('quizArea');
+      quizArea.innerHTML = '';
+
+      if (!input) {
+        alert("Boss, paste something first.");
+        return;
+      }
+
+      const lines = input.split('\n').map(line => line.trim());
+      let question = {
+        id: '',
+        title: '',
+        description: [],
+        options: {},
+        answer: '',
+        explanation: ''
+      };
+
+      // Step 1: Extract ID
+      if (lines[0].startsWith('QUESTION') || lines[0].startsWith('?')) {
+        question.id = lines.shift();
+      } else {
+        question.id = 'Unknown ID';
+      }
+
+      // Step 2: Extract Title
+      question.title = lines.shift();
+
+      // Step 3: Parse options and collect description + explanation
+      while (lines.length > 0) {
+        const line = lines[0];
+        if (/^[A-D]\./.test(line)) {
+          const key = line[0];
+          const answerMatch = line.match(/Right Answer:\s*([A-D])/i);
+          if (answerMatch) {
+            question.answer = answerMatch[1];
+            lines[0] = line.replace(/\s+Right Answer:\s*[A-D]/i, '').trim();
+          }
+          question.options[key] = lines.shift();
+        } else {
+          question.description.push(lines.shift());
+        }
+      }
+
+      // Join description for explanation
+      question.explanation = question.description.join('<br>');
+
+      // Build HTML output
+      let html = `
+        <h2>${question.id}</h2>
+        <p class="question-title">${question.title}</p>
+        <div id="options">
+      `;
+
+      for (let opt of ['A', 'B', 'C', 'D']) {
+        if (question.options[opt]) {
+          html += `<button class="option-btn" onclick="checkAnswer('${opt}', '${question.answer}', \`${question.explanation}\`)">${question.options[opt]}</button>`;
+        }
+      }
+
+      html += `
+        </div>
+        <div class="result" id="resultBox"></div>
+      </div>
+      `;
+
+      quizArea.innerHTML = html;
+    }
+
+    function checkAnswer(selected, correct, explanation) {
+      const resultBox = document.getElementById('resultBox');
+      const buttons = document.querySelectorAll('.option-btn');
+
+      // Reset button styles
+      buttons.forEach(btn => {
+        btn.classList.remove('correct', 'wrong');
+      });
+
+      let resultText = '';
+      if (selected.toUpperCase() === correct.toUpperCase()) {
+        resultText += `<span class="correct">✅ Correct! ${correct} is the right answer.</span><br>`;
+        document.querySelector(`.option-btn:nth-child(${selected.charCodeAt(0) - 64})`).classList.add('correct');
+      } else {
+        resultText += `<span class="wrong">❌ Nope. ${selected} is incorrect.</span><br>`;
+        document.querySelector(`.option-btn:nth-child(${selected.charCodeAt(0) - 64})`).classList.add('wrong');
+      }
+
+      resultText += `<div class="explanation">${explanation}</div>`;
+      resultBox.innerHTML = resultText;
+    }
+  </script>
+</body>
+</html>
