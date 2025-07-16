@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CDM Question Parser MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      height: 400px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .output {
+      background-color: white;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Question Parser MVP</h1>
+  <textarea id="input" placeholder="Paste your question here..."></textarea>
+  <button onclick="parseSingleQuestion()">Parse Question</button>
+  <div class="output" id="output"></div>
+
+  <script>
+    function parseSingleQuestion() {
+      const input = document.getElementById('input').value.trim();
+      const outputDiv = document.getElementById('output');
+      outputDiv.textContent = '';
+
+      if (!input) {
+        alert("Boss, paste something in first.");
+        return;
+      }
+
+      const lines = input.split('\n').map(line => line.trim());
+      let questionData = {
+        id: '',
+        title: '',
+        description: [],
+        options: {},
+        answer: ''
+      };
+
+      // Step 1: Extract question ID
+      if (lines[0].startsWith('QUESTION') || lines[0].startsWith('?')) {
+        questionData.id = lines[0];
+        lines.shift();
+      } else {
+        questionData.id = 'Unknown ID';
+      }
+
+      // Step 2: Extract question title
+      questionData.title = lines[0];
+      lines.shift();
+
+      // Step 3: Find and extract options + answer
+      while (lines.length > 0) {
+        const line = lines[0];
+
+        if (/^[A-D]\./.test(line)) {
+          const key = line[0];
+          // Check if Right Answer is inline
+          const answerMatch = line.match(/Right Answer:\s*([A-D])/i);
+          if (answerMatch) {
+            questionData.answer = answerMatch[1].toUpperCase();
+            // Remove the answer part
+            lines[0] = line.replace(/\s+Right Answer:\s*[A-D]/i, '').trim();
+          }
+          questionData.options[key] = lines.shift();
+        } else {
+          // Add to description
+          questionData.description.push(lines.shift());
+        }
+      }
+
+      // Step 4: Rebuild output
+      let output = `${questionData.id}\n`;
+      output += `${questionData.title}\n\n`;
+
+      // Join description lines
+      output += `${questionData.description.join('\n')}\n\n`;
+
+      // Output options A-D in order
+      for (let opt of ['A', 'B', 'C', 'D']) {
+        if (questionData.options[opt]) {
+          output += `${questionData.options[opt]}\n`;
+        }
+      }
+
+      // Final line
+      output += `✅ Correct Answer: - ${questionData.answer}`;
+
+      outputDiv.textContent = output;
+    }
+  </script>
+</body>
+</html>
