@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Question Parser</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      height: 400px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .quiz {
+      background-color: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .option-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #ecf0f1;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .option-btn:hover {
+      background-color: #dce1e4;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .correct {
+      color: #27ae60;
+    }
+    .wrong {
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Question Parser</h1>
+  <textarea id="input" placeholder="Paste your question here..."></textarea>
+  <button onclick="parseAndRender()">Parse &amp; Render</button>
+
+  <div class="quiz" id="quizArea"></div>
+
+  <script>
+    function parseAndRender() {
+      const input = document.getElementById('input').value.trim();
+      const quizArea = document.getElementById('quizArea');
+      quizArea.innerHTML = '';
+
+      if (!input) {
+        alert("Boss, paste something first.");
+        return;
+      }
+
+      const lines = input.split('\n').map(line => line.trim());
+      let question = {
+        id: '',
+        title: '',
+        description: [],
+        options: {},
+        answer: ''
+      };
+
+      // Step 1: Extract ID
+      if (lines[0].startsWith('QUESTION') || lines[0].startsWith('?')) {
+        question.id = lines.shift();
+      } else {
+        question.id = 'Unknown ID';
+      }
+
+      // Step 2: Extract Title
+      question.title = lines.shift();
+
+      // Step 3: Parse options and description
+      while (lines.length > 0) {
+        const line = lines[0];
+        if (/^[A-D]\./.test(line)) {
+          const key = line[0];
+          const answerMatch = line.match(/Right Answer:\s*([A-D])/i);
+          if (answerMatch) {
+            question.answer = answerMatch[1];
+            lines[0] = line.replace(/\s+Right Answer:\s*[A-D]/i, '').trim();
+          }
+          question.options[key] = lines.shift();
+        } else {
+          question.description.push(lines.shift());
+        }
+      }
+
+      // Build HTML output
+      let html = `
+        <h2>${question.id}</h2>
+        <p><strong>${question.title}</strong></p>
+        <p>${question.description.join('<br>')}</p>
+        <div id="options">
+      `;
+
+      for (let opt of ['A', 'B', 'C', 'D']) {
+        if (question.options[opt]) {
+          html += `<button class="option-btn" onclick="checkAnswer('${opt}', '${question.answer}')">${question.options[opt]}</button>`;
+        }
+      }
+
+      html += `
+        </div>
+        <div class="result" id="resultBox"></div>
+      </div>
+      `;
+
+      quizArea.innerHTML = html;
+    }
+
+    function checkAnswer(selected, correct) {
+      const resultBox = document.getElementById('resultBox');
+      if (selected.toUpperCase() === correct.toUpperCase()) {
+        resultBox.innerHTML = `<span class="correct">✅ Correct! ${correct} is the right answer.</span>`;
+      } else {
+        resultBox.innerHTML = `<span class="wrong">❌ Nope. Try again or learn from this failure.</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
